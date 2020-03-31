@@ -15,6 +15,11 @@ describe ("root index", ()=>{
   let setAge2Count = 0;
   let setAge2Count2 = 0;
 
+  beforeEach(()=>{
+    setAge2Count = 0;
+    setAge2Count2 = 0;
+  })
+
   it ("one shot", async ()=>{
     const testModelBuilder = defaultModelBuilder
       .state(() => ({

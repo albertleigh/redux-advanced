@@ -81,7 +81,8 @@ export type ExtractActionHelpers<
   TSagas extends SagaEffects,
 > = ExtractActionHelpersFromPayloadResultPairs<
   ExtractActionHelperPayloadResultPairs<TReducers> &
-    ExtractActionHelperPayloadResultPairs<TEffects>
+  ExtractActionHelperPayloadResultPairs<TEffects> &
+  ExtractActionHelperPayloadResultPairs<TSagas>
 >;
 
 export class ActionHelperImpl<TPayload = any, TResult = any>

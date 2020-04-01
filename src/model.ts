@@ -804,7 +804,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().options(options);
@@ -824,7 +825,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideOptions(override);
@@ -846,7 +848,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     return cloneModel(this._model);
   }

@@ -2,6 +2,7 @@ import { ExtractActionHelpers, RegisterOptions } from "./action";
 import { ArgsFactory, argsObjectToken, ExtractArgs, ModelArgs } from "./args";
 import { StoreContext } from "./context";
 import { ExtractDependencies } from "./dependencies";
+import { ExtractSagaEffects, LooseSagaEffects, OverrideSagas, SagaEffect, SagaEffects } from "./saga";
 import {
   Effect,
   Effects,
@@ -48,7 +49,8 @@ export interface Model<
   TSelectors extends Selectors = any,
   TReducers extends Reducers = any,
   TEffects extends Effects = any,
-  TEpics extends Epics = any
+  TEpics extends Epics = any,
+  TSagas extends SagaEffects = any
 > {
   options: ModelOptions;
 
@@ -58,6 +60,7 @@ export interface Model<
   reducers: TReducers;
   effects: TEffects;
   epics: TEpics;
+  sagas: TSagas;
 }
 
 export interface Models<TDependencies = any> {
@@ -79,6 +82,7 @@ export function cloneModel<T extends Model>(model: T): T {
     reducers: merge({}, model.reducers),
     effects: merge({}, model.effects),
     epics: merge({}, model.epics),
+    sagas: merge({}, model.sagas)
   } as T;
 }
 
@@ -89,8 +93,10 @@ export class ModelBuilder<
   TSelectors extends Selectors = any,
   TReducers extends Reducers = any,
   TEffects extends Effects = any,
-  TEpics extends Epics = any
+  TEpics extends Epics = any,
+  TSagas extends SagaEffects = any
 > {
+
   private static readonly _globalId = Date.now();
   private static _nextAnonymousEpicId = 1;
 
@@ -101,7 +107,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   >;
   private _isFrozen = false;
 
@@ -113,7 +120,8 @@ export class ModelBuilder<
       TSelectors,
       TReducers,
       TEffects,
-      TEpics
+      TEpics,
+      TSagas
     >
   ) {
     this._model = cloneModel(model);
@@ -126,7 +134,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     this._isFrozen = true;
     return this;
@@ -139,7 +148,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     return new ModelBuilder(this._model);
   }
@@ -153,7 +163,8 @@ export class ModelBuilder<
     TSelectors & ExtractSelectors<TModel>,
     TReducers & ExtractReducers<TModel>,
     TEffects & ExtractEffects<TModel>,
-    TEpics & ExtractEpics<TModel>
+    TEpics & ExtractEpics<TModel>,
+    TSagas & ExtractSagaEffects<TModel>
   >;
   public extend<TModel extends Model, TSubKey extends string>(
     model: TModel,
@@ -172,7 +183,8 @@ export class ModelBuilder<
     TSelectors & { [P in TSubKey]: ExtractSelectors<TModel> },
     TReducers & { [P in TSubKey]: ExtractReducers<TModel> },
     TEffects & { [P in TSubKey]: ExtractEffects<TModel> },
-    TEpics & { [P in TSubKey]: ExtractEpics<TModel> }
+    TEpics & { [P in TSubKey]: ExtractEpics<TModel> },
+    TSagas & { [P in TSubKey]: ExtractSagaEffects<TModel> }
   >;
   public extend(model: Model, subKey?: string) {
     if (this._isFrozen) {
@@ -185,6 +197,7 @@ export class ModelBuilder<
     let reducers = model.reducers;
     let effects = model.effects;
     let epics = model.epics;
+    let sagas = model.sagas;
     let options = model.options;
 
     if (subKey !== undefined) {
@@ -271,6 +284,15 @@ export class ModelBuilder<
         }),
       };
 
+      sagas = {
+        [subKey]: assignObjectDeeply({}, model.sagas, (oldSaga: SagaEffect) => {
+          const newSagaEffect: SagaEffect = function* (action){
+            yield* oldSaga(action);
+          };
+          return newSagaEffect;
+        }),
+      };
+
       options = { ...options };
       delete options.autoRegister;
     }
@@ -282,6 +304,7 @@ export class ModelBuilder<
       .reducers(reducers)
       .effects(effects)
       .epics(epics)
+      .sagas(sagas)
       .options(options);
 
     return this as any;
@@ -294,7 +317,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().dependencies<T>();
@@ -312,7 +336,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().args(args);
@@ -342,7 +367,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideArgs(override);
@@ -369,7 +395,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().state(state);
@@ -401,7 +428,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideState(override);
@@ -424,7 +452,7 @@ export class ModelBuilder<
       TDependencies,
       TState,
       ExtractGetters<TSelectors>,
-      ExtractActionHelpers<TReducers, TEffects>
+      ExtractActionHelpers<TReducers, TEffects, TSagas>
     >
   >(
     selectors:
@@ -433,7 +461,7 @@ export class ModelBuilder<
           TDependencies,
           TState,
           ExtractGetters<TSelectors>,
-          ExtractActionHelpers<TReducers, TEffects>,
+          ExtractActionHelpers<TReducers, TEffects, TSagas>,
           T
         >
   ): ModelBuilder<
@@ -443,7 +471,8 @@ export class ModelBuilder<
     TSelectors & LooseSelectors<T>,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().selectors(selectors);
@@ -468,21 +497,21 @@ export class ModelBuilder<
             TDependencies,
             TState,
             ExtractGetters<TSelectors>,
-            ExtractActionHelpers<TReducers, TEffects>
+            ExtractActionHelpers<TReducers, TEffects, TSagas>
           >
         >
       | SelectorsFactory<
           TDependencies,
           TState,
           ExtractGetters<TSelectors>,
-          ExtractActionHelpers<TReducers, TEffects>,
+          ExtractActionHelpers<TReducers, TEffects, TSagas>,
           DeepPartial<
             OverrideSelectors<
               TSelectors,
               TDependencies,
               TState,
               ExtractGetters<TSelectors>,
-              ExtractActionHelpers<TReducers, TEffects>
+              ExtractActionHelpers<TReducers, TEffects, TSagas>
             >
           >
         >
@@ -493,7 +522,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideSelectors(override);
@@ -518,7 +548,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers & LooseReducers<T>,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().reducers(reducers);
@@ -540,7 +571,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideReducers(override);
@@ -560,7 +592,7 @@ export class ModelBuilder<
       TDependencies,
       TState,
       ExtractGetters<TSelectors>,
-      ExtractActionHelpers<TReducers, TEffects>
+      ExtractActionHelpers<TReducers, TEffects, TSagas>
     >
   >(
     effects: T
@@ -571,7 +603,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects & LooseEffects<T>,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().effects(effects);
@@ -591,7 +624,7 @@ export class ModelBuilder<
         TDependencies,
         TState,
         ExtractGetters<TSelectors>,
-        ExtractActionHelpers<TReducers, TEffects>
+        ExtractActionHelpers<TReducers, TEffects, TSagas>
       >
     >
   ): ModelBuilder<
@@ -601,7 +634,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideEffects(override);
@@ -621,7 +655,7 @@ export class ModelBuilder<
       TDependencies,
       TState,
       ExtractGetters<TSelectors>,
-      ExtractActionHelpers<TReducers, TEffects>
+      ExtractActionHelpers<TReducers, TEffects, TSagas>
     >
   >(
     epics:
@@ -631,7 +665,7 @@ export class ModelBuilder<
             TDependencies,
             TState,
             ExtractGetters<TSelectors>,
-            ExtractActionHelpers<TReducers, TEffects>
+            ExtractActionHelpers<TReducers, TEffects, TSagas>
           >
         >
   ): ModelBuilder<
@@ -641,7 +675,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics & LooseEpics<T>
+    TEpics & LooseEpics<T>,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().epics(epics);
@@ -671,7 +706,7 @@ export class ModelBuilder<
         TDependencies,
         TState,
         ExtractGetters<TSelectors>,
-        ExtractActionHelpers<TReducers, TEffects>
+        ExtractActionHelpers<TReducers, TEffects, TSagas>
       >
     >
   ): ModelBuilder<
@@ -681,7 +716,8 @@ export class ModelBuilder<
     TSelectors,
     TReducers,
     TEffects,
-    TEpics
+    TEpics,
+    TSagas
   > {
     if (this._isFrozen) {
       return this.clone().overrideEpics(override);
@@ -691,6 +727,69 @@ export class ModelBuilder<
       {},
       this._model.epics,
       override(this._model.epics)
+    );
+
+    return this as any;
+  }
+
+  public sagas<
+    T extends SagaEffects<
+      TDependencies,
+      TState,
+      ExtractGetters<TSelectors>,
+      ExtractActionHelpers<TReducers, TEffects, TSagas>
+    >
+  >(
+    sagaEffects: T
+  ): ModelBuilder<
+    TDependencies,
+    TArgs,
+    TState,
+    TSelectors,
+    TReducers,
+    TEffects,
+    TEpics,
+    TSagas & LooseSagaEffects<T>
+  > {
+    if (this._isFrozen) {
+      return this.clone().sagas(sagaEffects);
+    }
+
+    this._model.sagas = merge({}, this._model.sagas, sagaEffects);
+
+    return this as any;
+  }
+
+  public overrideSagas(
+    override: (
+      base: TSagas
+    ) => DeepPartial<
+      OverrideSagas<
+        TSagas,
+        TDependencies,
+        TState,
+        ExtractGetters<TSelectors>,
+        ExtractActionHelpers<TReducers, TEffects, TSagas>
+        >
+      >
+  ): ModelBuilder<
+    TDependencies,
+    TArgs,
+    TState,
+    TSelectors,
+    TReducers,
+    TEffects,
+    TEpics,
+    TSagas
+    > {
+    if (this._isFrozen) {
+      return this.clone().overrideSagas(override);
+    }
+
+    this._model.sagas = merge(
+      {},
+      this._model.sagas,
+      override(this._model.sagas)
     );
 
     return this as any;
@@ -758,7 +857,7 @@ export function isModel(obj: any): obj is Model {
   return model != null && typeof model.state === "function";
 }
 
-export function createModelBuilder(): ModelBuilder<{}, {}, {}, {}, {}, {}, {}> {
+export function createModelBuilder(): ModelBuilder<{}, {}, {}, {}, {}, {}, {}, {}> {
   return new ModelBuilder({
     options: {},
 
@@ -768,6 +867,7 @@ export function createModelBuilder(): ModelBuilder<{}, {}, {}, {}, {}, {}, {}> {
     reducers: {},
     effects: {},
     epics: {},
+    sagas: {}
   });
 }
 
@@ -812,6 +912,17 @@ export function registerModel<TModel extends Model>(
       effectByActionName.set(actionName, effect);
     });
 
+    const sagaEffectByActionName = new Map<string, SagaEffect>();
+    assignObjectDeeply({}, _model.sagas, (saga, paths) => {
+      const actionName = storeContext.resolveActionName(paths);
+      if (sagaEffectByActionName.has(actionName)) {
+        throw new Error(
+          "Failed to register model: action name of sagaEffect should be unique"
+        );
+      }
+      sagaEffectByActionName.set(actionName, saga);
+    });
+
     storeContext.contextByModel.set(_model, {
       isDynamic,
       modelIndex: isDynamic ? registeredModels!.length : undefined,
@@ -821,6 +932,7 @@ export function registerModel<TModel extends Model>(
 
       reducerByActionName,
       effectByActionName,
+      sagaEffectByActionName,
 
       containerByKey: new Map(),
     });

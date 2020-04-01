@@ -1,5 +1,6 @@
 import { ContainerImpl } from "./container";
 import { StoreContext } from "./context";
+import { ExtractSagaEffects, SagaEffect, SagaEffects } from "./saga";
 import { Effect, Effects, ExtractEffects } from "./effect";
 import { Model } from "./model";
 import { ExtractReducers, Reducer, Reducers } from "./reducer";
@@ -20,6 +21,8 @@ export interface Action<TPayload = any> {
   payload: TPayload;
 }
 
+export type ActionWithFields<TPayload, TFieldsObj> = Action<TPayload> & TFieldsObj;
+
 export interface ActionHelper<TPayload = any, TResult = any> {
   type: string;
   is(action: any): action is Action<TPayload>;
@@ -38,6 +41,7 @@ export type ExtractActionPayload<
   | ActionHelper<infer TPayload, any>
   | Reducer<any, any, infer TPayload>
   | Effect<any, any, any, any, infer TPayload, any>
+  | SagaEffect<any, any, any, any, infer TPayload, any>
   ? TPayload
   : never;
 
@@ -46,6 +50,7 @@ export type ExtractActionDispatchResult<
 > = T extends
   | ActionHelper<any, infer TResult>
   | Effect<any, any, any, any, any, infer TResult>
+  | SagaEffect<any, any, any, any, any, infer TResult>
   ? TResult
   : never;
 
@@ -72,7 +77,8 @@ export type ExtractActionHelpersFromPayloadResultPairs<T> = {
 
 export type ExtractActionHelpers<
   TReducers extends Reducers,
-  TEffects extends Effects
+  TEffects extends Effects,
+  TSagas extends SagaEffects,
 > = ExtractActionHelpersFromPayloadResultPairs<
   ExtractActionHelperPayloadResultPairs<TReducers> &
     ExtractActionHelperPayloadResultPairs<TEffects>
@@ -133,12 +139,12 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
 export function createActionHelpers<TModel extends Model>(
   storeContext: StoreContext,
   container: ContainerImpl<TModel>
-): ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>> {
+): ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>, ExtractSagaEffects<TModel>> {
   const actionHelpers: ActionHelpers = {};
 
   assignObjectDeeply(
     actionHelpers,
-    merge({}, container.model.reducers, container.model.effects),
+    merge({}, container.model.reducers, container.model.effects, container.model.sagas),
     (o, paths) =>
       new ActionHelperImpl(
         storeContext,

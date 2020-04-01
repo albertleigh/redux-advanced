@@ -7,6 +7,7 @@ import { ContainerImpl, createGetContainer, GetContainer } from "./container";
 import { Effect } from "./effect";
 import { Model } from "./model";
 import { Reducer } from "./reducer";
+import { SagaEffect } from "./saga";
 import { ReduxAdvancedOptions } from "./store";
 import { nothingToken } from "./util";
 
@@ -19,6 +20,7 @@ export interface ModelContext {
 
   reducerByActionName: Map<string, Reducer>;
   effectByActionName: Map<string, Effect>;
+  sagaEffectByActionName: Map<string, SagaEffect>;
 
   containerByKey: Map<string | undefined, ContainerImpl>;
 }

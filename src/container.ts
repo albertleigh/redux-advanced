@@ -18,6 +18,7 @@ import {
 } from "./selector";
 import { ExtractState, getSubState } from "./state";
 import { joinLastPart, nothingToken } from "./util";
+import { ExtractSagaEffects, SagaContext } from "./saga";
 
 export interface ContainerInternal<TArgs, TState, TGetters, TActionHelpers> {
   baseNamespace: string;
@@ -41,7 +42,7 @@ export interface Container<TModel extends Model = any>
     ExtractArgs<TModel>,
     ExtractState<TModel>,
     ExtractGetters<ExtractSelectors<TModel>>,
-    ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>>
+    ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>, ExtractSagaEffects<TModel>>
   > {}
 
 export class ContainerImpl<TModel extends Model = Model>
@@ -179,10 +180,42 @@ export class ContainerImpl<TModel extends Model = Model>
     return this._epicContext;
   }
 
+  public get sagaContext(): SagaContext {
+    if (this._sagaContext == null) {
+      const self = this;
+      this._sagaContext = {
+
+        get dependencies() {
+          return self._storeContext.getDependencies();
+        },
+
+        baseNamespace: self.baseNamespace,
+        key: self.key,
+        modelIndex: self.modelIndex,
+
+        getState() {
+          return self.getState();
+        },
+        get getters() {
+          return self.getters;
+        },
+        get actions() {
+          return self.actions;
+        },
+
+        get getContainer() {
+          return self._storeContext.getContainer;
+        },
+      };
+    }
+    return this._sagaContext;
+  }
+
   private _reducerContext: ReducerContext | undefined;
   private _selectorContext: SelectorContext | undefined;
   private _effectContext: EffectContext | undefined;
   private _epicContext: EpicContext | undefined;
+  private _sagaContext: SagaContext | undefined;
 
   private _cachedState: any;
   private _cachedGetters: any;
@@ -308,7 +341,8 @@ export class ContainerImpl<TModel extends Model = Model>
 
   public get actions(): ExtractActionHelpers<
     ExtractReducers<TModel>,
-    ExtractEffects<TModel>
+    ExtractEffects<TModel>,
+    ExtractSagaEffects<TModel>
   > {
     const container = this._getCurrentContainer();
     if (container !== this) {
@@ -433,7 +467,7 @@ export function createSubContainer<
   ExtractArgs<TModel>[TSubKey],
   ExtractState<TModel>[TSubKey],
   ExtractGetters<ExtractSelectors<TModel>>[TSubKey],
-  ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>>[TSubKey]
+  ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>,ExtractSagaEffects<TModel>>[TSubKey]
 > {
   return {
     get baseNamespace(): string {

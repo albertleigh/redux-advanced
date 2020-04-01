@@ -113,10 +113,11 @@ export function createMiddleware(storeContext: StoreContext): Middleware {
     const container = storeContext.containerByNamespace.get(namespace);
     if (container && container.isRegistered) {
       const deferred = storeContext.deferredByAction.get(action);
+      const modelContext = storeContext.contextByModel
+        .get(container.model);
 
-      const effect = storeContext.contextByModel
-        .get(container.model)
-        ?.effectByActionName.get(actionName);
+      const effect = modelContext?.effectByActionName.get(actionName);
+      const notOneSagaAction = !!effect || !modelContext?.sagaEffectByActionName.has(actionName);
 
       if (effect) {
         const promise = effect(container.effectContext, action.payload);
@@ -134,7 +135,7 @@ export function createMiddleware(storeContext: StoreContext): Middleware {
           }
         );
       } else {
-        deferred?.resolve(undefined);
+        notOneSagaAction && deferred?.resolve(undefined);
       }
     }
 

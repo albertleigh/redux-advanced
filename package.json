@@ -20,12 +20,14 @@
     "@rollup/plugin-commonjs": "^11.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
     "@types/chai": "^4.2.9",
+    "@types/jest": "^25.1.4",
     "@types/mocha": "^7.0.1",
     "@typescript-eslint/eslint-plugin": "^2.20.0",
     "@typescript-eslint/parser": "^2.20.0",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
     "immer": "^5.3.6",
+    "jest": "^25.2.4",
     "mocha": "^7.0.1",
     "prettier": "^1.19.1",
     "redux": "^4.0.5",
@@ -35,11 +37,13 @@
     "rollup": "^1.31.1",
     "rollup-plugin-cleanup": "^3.1.1",
     "rxjs": "^6.5.4",
+    "ts-jest": "^25.3.0",
     "tslib": "^1.10.0",
     "typescript": "^3.7.5"
   },
   "scripts": {
     "build": "rimraf dist lib && tsc -p . && rollup -c",
+    "test:unit": "jest",
     "test": "npm run build && tsc -p test && rollup -c test/rollup.config.js && mocha test/test.build.js",
     "release": "npm run build && npm publish"
   }

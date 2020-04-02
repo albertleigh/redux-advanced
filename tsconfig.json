@@ -14,5 +14,15 @@
     "importHelpers": true,
     "outDir": "lib"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "lib",
+    "acceptance-tests",
+    "./src/**/__mocks__/",
+    "./src/**/__tests__/",
+    "./src/**/*.spec.ts",
+    "./src/**/*.test.ts"
+  ]
 }

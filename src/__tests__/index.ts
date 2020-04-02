@@ -2,7 +2,6 @@ import { createModelBuilder, init } from "../index";
 import { empty, timer } from "rxjs";
 import { filter, mergeMapTo, take, tap } from "rxjs/operators";
 
-
 interface Dependencies {
   appId: number;
 }
@@ -206,7 +205,7 @@ describe ("root index", ()=>{
     let unhandledEffectErrorCount = 0;
     const { getContainer: storeGetContainer, registerModels, gc } = init({
       dependencies: appDependencies,
-
+      // enableSaga: true,
       onUnhandledEffectError: () => {
         unhandledEffectErrorCount += 1;
       },

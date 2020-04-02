@@ -1,6 +1,8 @@
+import { StrictEffect } from "@redux-saga/types"
+import { call } from 'redux-saga/effects';
 import { ContainerImpl } from "./container";
 import { StoreContext } from "./context";
-import { ExtractSagaEffects, SagaEffect, SagaEffects } from "./saga";
+import { ExtractSagaEffects, SagaContext, SagaEffect, SagaEffects } from "./saga";
 import { Effect, Effects, ExtractEffects } from "./effect";
 import { Model } from "./model";
 import { ExtractReducers, Reducer, Reducers } from "./reducer";
@@ -8,7 +10,7 @@ import {
   assignObjectDeeply,
   joinLastPart,
   merge,
-  PatchedPromise,
+  PatchedPromise, splitLastPart,
 } from "./util";
 
 export interface AnyAction {
@@ -28,6 +30,7 @@ export interface ActionHelper<TPayload = any, TResult = any> {
   is(action: any): action is Action<TPayload>;
   create(payload: TPayload): Action<TPayload>;
   dispatch(payload: TPayload): Promise<TResult>;
+  saga(action: Action<TPayload>): {[Symbol.iterator](): Iterator<StrictEffect,TResult,Action<TPayload>>};
 }
 
 export interface ActionHelpers {
@@ -113,6 +116,11 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     }
 
     const action = this.create(payload);
+    const [, actionName] = splitLastPart(this.type);
+    if (this._storeContext.contextByModel
+      .get(this._container.model)?.sagaEffectByActionName.has(actionName)){
+      (action as ActionWithFields<TPayload, {context: SagaContext}> ).context = this._container.sagaContext;
+    }
 
     const promise = new PatchedPromise<TResult>((resolve, reject) => {
       this._storeContext.deferredByAction.set(action, {
@@ -134,6 +142,29 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     this._storeContext.store.dispatch(action);
 
     return promise;
+  }
+
+  get saga(){
+    const self = this;
+
+    if (
+      this._container.canRegister &&
+      this._container.model.options.autoRegister
+    ) {
+      this._container.register();
+    }
+
+    const [, actionName] = splitLastPart(this.type);
+    const theSaga = this._storeContext.contextByModel
+      .get(this._container.model)?.sagaEffectByActionName.get(actionName);
+    if (theSaga){
+      return theSaga;
+    }else{
+      // cheap compatible solution, should be avoided via call(action.dispatch, {})
+      return function*(action: any){
+        yield call(self.dispatch, action.payload);
+      }
+    }
   }
 }
 

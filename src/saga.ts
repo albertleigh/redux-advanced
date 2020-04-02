@@ -1,14 +1,16 @@
 import { StrictEffect } from "@redux-saga/types"
-import { takeEvery } from "redux-saga/effects"
+import { all, cancel, fork, spawn, take, takeEvery } from "redux-saga/effects"
 import { Getters } from "./selector";
 import {
+  actionTypes,
+  Action,
   ActionHelpers,
   ActionWithFields,
   AnyAction,
   ExtractActionDispatchResult,
-  ExtractActionPayload,
+  ExtractActionPayload, RegisterOptions, UnregisterOptions,
 } from "./action";
-import { GetContainer } from "./container";
+import { ContainerImpl, GetContainer } from "./container";
 import { Model } from "./model";
 import { StoreContext } from "./context";
 import { splitLastPart } from "./util";
@@ -103,23 +105,76 @@ export type LooseSagaEffects<TSagaEffects> = {
 };
 
 export function rootSagaBuilder(storeCtx: StoreContext) {
-  return function* rootSaga() {
-    yield takeEvery("*",function* globalInterceptor( action: AnyAction){
-      const [namespace, actionName] = splitLastPart(action.type);
-      const container = storeCtx.containerByNamespace.get(namespace);
-      if (container && container.isRegistered){
-        const theSaga = storeCtx.contextByModel.get(container!.model)?.sagaEffectByActionName.get(actionName);
-        if (theSaga){
-          const deferred = storeCtx.deferredByAction.get(action);
-          const newAction = action as ActionWithFields<any,{context: SagaContext}>;
-          newAction.context = container.sagaContext;
-          try{
-            deferred?.resolve( yield* theSaga(newAction) );
-          }catch (e) {
-            deferred?.reject(e);
+
+  function * _doSpawnEntries(action: AnyAction, entrySagaEffects: SagaEffect[],baseNamespace: string, key?: string) {
+    const allTasks = yield all(entrySagaEffects.map(saga => fork( saga as any,action)));
+
+    while( true ){
+      const action = (yield take(actionTypes.unregister)) as Action<UnregisterOptions[]>;
+      if (action.payload.some(option=>
+        option.baseNamespace === baseNamespace &&
+        option.key === key
+      )){
+        break;
+      }
+    }
+
+    yield all(allTasks.map((task: any) => cancel(task)));
+  }
+
+  function* registerEntriesHandler(action: Action<RegisterOptions[]>) {
+    const optionList = action.payload;
+
+    for (const options of optionList){
+      const { baseNamespace, key, modelIndex } = options;
+      const models = storeCtx.modelsByBaseNamespace.get(baseNamespace);
+      if (models == null) {
+        throw new Error(
+          `Failed to register container: no model found for namespace "${baseNamespace}"`
+        );
+      }
+      const model = models[modelIndex ?? 0];
+      const modelCtx = storeCtx.contextByModel.get(model);
+      const container = storeCtx.getContainer(model, key!) as ContainerImpl;
+      const newAction = action as ActionWithFields<any,{context: typeof container.sagaContext}>;
+      newAction.context = container.sagaContext;
+      const entrySagaEffects: SagaEffect[] = [];
+      modelCtx!.sagaEffectByActionName.forEach((oneSaga,key)=>{
+        if (key.indexOf("$$") !== -1){
+          entrySagaEffects.push(oneSaga);
+        }
+      });
+      yield spawn(_doSpawnEntries, newAction,entrySagaEffects, baseNamespace, key);
+    }
+  }
+
+
+  return function* defaultHandler() {
+    yield all([
+      takeEvery(actionTypes.register,registerEntriesHandler),
+      takeEvery("*",function* defaultInterceptor( action: AnyAction){
+        const [namespace, actionName] = splitLastPart(action.type);
+        const container = storeCtx.containerByNamespace.get(namespace);
+        if (container && container.isRegistered){
+          const theSaga = storeCtx.contextByModel.get(container!.model)?.sagaEffectByActionName.get(actionName);
+          // any action name containing _$ or $$ would be regarded as customized saga
+          // or root saga wont be yielded by default;
+          if (theSaga){
+            const deferred = storeCtx.deferredByAction.get(action);
+            if (actionName.match(/.*[$_]\$.*/g)) {
+              deferred?.resolve({});
+            }else {
+              const newAction = action as ActionWithFields<any,{context: typeof container.sagaContext}>;
+              newAction.context = container.sagaContext;
+              try{
+                deferred?.resolve( yield* theSaga(newAction) );
+              }catch (e) {
+                deferred?.reject(e);
+              }
+            }
           }
         }
-      }
-    })
+      })
+    ]);
   }
 }

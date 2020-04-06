@@ -101,10 +101,17 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
   }
 
   public create(payload: TPayload): Action<TPayload> {
-    return {
+    const action = {
       type: this.type,
       payload,
     };
+    // todo move ctx to this.create
+    const [, actionName] = splitLastPart(this.type);
+    if (this._storeContext && this._storeContext.contextByModel
+      .get(this._container.model)?.sagaEffectByActionName.has(actionName)){
+      (action as ActionWithFields<TPayload, {context: SagaContext}> ).context = this._container.sagaContext;
+    }
+    return action;
   }
 
   public dispatch(payload: TPayload): Promise<TResult> {
@@ -116,11 +123,6 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     }
 
     const action = this.create(payload);
-    const [, actionName] = splitLastPart(this.type);
-    if (this._storeContext.contextByModel
-      .get(this._container.model)?.sagaEffectByActionName.has(actionName)){
-      (action as ActionWithFields<TPayload, {context: SagaContext}> ).context = this._container.sagaContext;
-    }
 
     const promise = new PatchedPromise<TResult>((resolve, reject) => {
       this._storeContext.deferredByAction.set(action, {

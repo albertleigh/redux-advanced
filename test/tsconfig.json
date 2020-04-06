@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "declaration": false,
-    "outDir": ""
-  },
-  "include": ["test.ts"]
-}

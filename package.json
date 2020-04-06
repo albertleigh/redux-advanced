@@ -1,8 +1,23 @@
 {
-  "name": "redux-advanced",
-  "version": "1.0.0-next.5",
+  "name": "@albertli90/redux-advanced",
+  "version": "1.1.0-beta.1",
   "description": "A state management library based on Redux",
-  "authors": "SpringNyan",
+  "authors": {
+    "name": "Wentao Li",
+    "email": "liwentao90@yahoo.com",
+    "url": "https://albertli90.com/"
+  },
+  "contributors": [
+    {
+      "name": "SpringNyan",
+      "email": "pringnyan@gmail.com"
+    },
+    {
+      "name": "Wentao Li",
+      "email": "liwentao90@yahoo.com",
+      "url": "https://albertli90.com/"
+    }
+  ],
   "license": "MIT",
   "repository": "github:SpringNyan/redux-advanced",
   "keywords": [
@@ -19,16 +34,12 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
-    "@types/chai": "^4.2.9",
     "@types/jest": "^25.1.4",
-    "@types/mocha": "^7.0.1",
     "@typescript-eslint/eslint-plugin": "^2.20.0",
     "@typescript-eslint/parser": "^2.20.0",
-    "chai": "^4.2.0",
     "eslint": "^6.8.0",
     "immer": "^5.3.6",
     "jest": "^25.2.4",
-    "mocha": "^7.0.1",
     "prettier": "^1.19.1",
     "redux": "^4.0.5",
     "redux-observable": "^1.2.0",
@@ -43,8 +54,7 @@
   },
   "scripts": {
     "build": "rimraf dist lib && tsc -p . && rollup -c",
-    "test:unit": "jest",
-    "test": "npm run build && tsc -p test && rollup -c test/rollup.config.js && mocha test/test.build.js",
+    "test": "jest",
     "release": "npm run build && npm publish"
   }
 }

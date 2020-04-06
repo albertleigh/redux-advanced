@@ -1,8 +1,13 @@
-import { StrictEffect } from "@redux-saga/types"
-import { call } from 'redux-saga/effects';
+import { StrictEffect } from "@redux-saga/types";
+import { call } from "redux-saga/effects";
 import { ContainerImpl } from "./container";
 import { StoreContext } from "./context";
-import { ExtractSagaEffects, SagaContext, SagaEffect, SagaEffects } from "./saga";
+import {
+  ExtractSagaEffects,
+  SagaContext,
+  SagaEffect,
+  SagaEffects,
+} from "./saga";
 import { Effect, Effects, ExtractEffects } from "./effect";
 import { Model } from "./model";
 import { ExtractReducers, Reducer, Reducers } from "./reducer";
@@ -10,7 +15,8 @@ import {
   assignObjectDeeply,
   joinLastPart,
   merge,
-  PatchedPromise, splitLastPart,
+  PatchedPromise,
+  splitLastPart,
 } from "./util";
 
 export interface AnyAction {
@@ -23,14 +29,17 @@ export interface Action<TPayload = any> {
   payload: TPayload;
 }
 
-export type ActionWithFields<TPayload, TFieldsObj> = Action<TPayload> & TFieldsObj;
+export type ActionWithFields<TPayload, TFieldsObj> = Action<TPayload> &
+  TFieldsObj;
 
 export interface ActionHelper<TPayload = any, TResult = any> {
   type: string;
   is(action: any): action is Action<TPayload>;
   create(payload: TPayload): Action<TPayload>;
   dispatch(payload: TPayload): Promise<TResult>;
-  saga(action: Action<TPayload>): {[Symbol.iterator](): Iterator<StrictEffect,TResult,Action<TPayload>>};
+  saga(
+    action: Action<TPayload>
+  ): { [Symbol.iterator](): Iterator<StrictEffect, TResult, Action<TPayload>> };
 }
 
 export interface ActionHelpers {
@@ -81,11 +90,11 @@ export type ExtractActionHelpersFromPayloadResultPairs<T> = {
 export type ExtractActionHelpers<
   TReducers extends Reducers,
   TEffects extends Effects,
-  TSagas extends SagaEffects,
+  TSagas extends SagaEffects
 > = ExtractActionHelpersFromPayloadResultPairs<
   ExtractActionHelperPayloadResultPairs<TReducers> &
-  ExtractActionHelperPayloadResultPairs<TEffects> &
-  ExtractActionHelperPayloadResultPairs<TSagas>
+    ExtractActionHelperPayloadResultPairs<TEffects> &
+    ExtractActionHelperPayloadResultPairs<TSagas>
 >;
 
 export class ActionHelperImpl<TPayload = any, TResult = any>
@@ -107,9 +116,16 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     };
     // todo move ctx to this.create
     const [, actionName] = splitLastPart(this.type);
-    if (this._storeContext && this._storeContext.contextByModel
-      .get(this._container.model)?.sagaEffectByActionName.has(actionName)){
-      (action as ActionWithFields<TPayload, {context: SagaContext}> ).context = this._container.sagaContext;
+    if (
+      this._storeContext &&
+      this._storeContext.contextByModel
+        .get(this._container.model)
+        ?.sagaEffectByActionName.has(actionName)
+    ) {
+      (action as ActionWithFields<
+        TPayload,
+        { context: SagaContext }
+      >).context = this._container.sagaContext;
     }
     return action;
   }
@@ -146,7 +162,7 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     return promise;
   }
 
-  get saga(){
+  get saga() {
     const self = this;
 
     if (
@@ -158,14 +174,15 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
 
     const [, actionName] = splitLastPart(this.type);
     const theSaga = this._storeContext.contextByModel
-      .get(this._container.model)?.sagaEffectByActionName.get(actionName);
-    if (theSaga){
+      .get(this._container.model)
+      ?.sagaEffectByActionName.get(actionName);
+    if (theSaga) {
       return theSaga;
-    }else{
+    } else {
       // cheap compatible solution, should be avoided via call(action.dispatch, {})
-      return function*(action: any){
+      return function*(action: any) {
         yield call(self.dispatch, action.payload);
-      }
+      };
     }
   }
 }
@@ -173,12 +190,21 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
 export function createActionHelpers<TModel extends Model>(
   storeContext: StoreContext,
   container: ContainerImpl<TModel>
-): ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>, ExtractSagaEffects<TModel>> {
+): ExtractActionHelpers<
+  ExtractReducers<TModel>,
+  ExtractEffects<TModel>,
+  ExtractSagaEffects<TModel>
+> {
   const actionHelpers: ActionHelpers = {};
 
   assignObjectDeeply(
     actionHelpers,
-    merge({}, container.model.reducers, container.model.effects, container.model.sagas),
+    merge(
+      {},
+      container.model.reducers,
+      container.model.effects,
+      container.model.sagas
+    ),
     (o, paths) =>
       new ActionHelperImpl(
         storeContext,

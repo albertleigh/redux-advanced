@@ -1,5 +1,5 @@
-import { StrictEffect } from "@redux-saga/types"
-import { all, cancel, fork, spawn, take, takeEvery } from "redux-saga/effects"
+import { StrictEffect } from "@redux-saga/types";
+import { all, cancel, fork, spawn, take, takeEvery } from "redux-saga/effects";
 import { Getters } from "./selector";
 import {
   actionTypes,
@@ -8,7 +8,9 @@ import {
   ActionWithFields,
   AnyAction,
   ExtractActionDispatchResult,
-  ExtractActionPayload, RegisterOptions, UnregisterOptions,
+  ExtractActionPayload,
+  RegisterOptions,
+  UnregisterOptions,
 } from "./action";
 import { ContainerImpl, GetContainer } from "./container";
 import { Model } from "./model";
@@ -21,7 +23,6 @@ export interface SagaContext<
   TGetters extends Getters = any,
   TActionHelpers extends ActionHelpers = any
 > {
-
   dependencies: TDependencies;
 
   baseNamespace: string;
@@ -33,7 +34,6 @@ export interface SagaContext<
   actions: TActionHelpers;
 
   getContainer: GetContainer;
-
 }
 
 export type SagaEffect<
@@ -44,29 +44,35 @@ export type SagaEffect<
   TPayload = any,
   TResult = any
 > = (
-  action: ActionWithFields<TPayload,{context: SagaContext}>
-) => unknown & {[Symbol.iterator](): Iterator<StrictEffect,TResult,ActionWithFields<TPayload,{context: SagaContext}>>};
+  action: ActionWithFields<TPayload, { context: SagaContext }>
+) => unknown & {
+  [Symbol.iterator](): Iterator<
+    StrictEffect,
+    TResult,
+    ActionWithFields<TPayload, { context: SagaContext }>
+  >;
+};
 
 export interface SagaEffects<
   TDependencies = any,
   TState extends object = any,
   TGetters extends Getters = any,
   TActionHelpers extends ActionHelpers = any
-  > {
+> {
   [name: string]:
     | SagaEffect<TDependencies, TState, TGetters, TActionHelpers>
     | SagaEffects<TDependencies, TState, TGetters, TActionHelpers>;
 }
 
 export type ExtractSagaEffects<T extends Model> = T extends Model<
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer TSagas
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer TSagas
 >
   ? TSagas
   : never;
@@ -87,34 +93,43 @@ export type OverrideSagas<
         ExtractActionPayload<TSagas[P]>,
         ExtractActionDispatchResult<TSagas[P]>
       >
-    : OverrideSagas<TSagas[P], TDependencies, TState, TGetters, TActionHelpers>
-}
-
+    : OverrideSagas<TSagas[P], TDependencies, TState, TGetters, TActionHelpers>;
+};
 
 export type LooseSagaEffects<TSagaEffects> = {
   [P in keyof TSagaEffects]: TSagaEffects[P] extends (...args: any[]) => any
     ? SagaEffect<
-      any,
-      any,
-      any,
-      any,
-      ExtractActionPayload<TSagaEffects[P]>,
-      ExtractActionDispatchResult<TSagaEffects[P]>
+        any,
+        any,
+        any,
+        any,
+        ExtractActionPayload<TSagaEffects[P]>,
+        ExtractActionDispatchResult<TSagaEffects[P]>
       >
     : LooseSagaEffects<TSagaEffects[P]>;
 };
 
 export function rootSagaBuilder(storeCtx: StoreContext) {
+  function* _doSpawnEntries(
+    action: AnyAction,
+    entrySagaEffects: SagaEffect[],
+    baseNamespace: string,
+    key?: string
+  ) {
+    const allTasks = yield all(
+      entrySagaEffects.map((saga) => fork(saga as any, action))
+    );
 
-  function * _doSpawnEntries(action: AnyAction, entrySagaEffects: SagaEffect[],baseNamespace: string, key?: string) {
-    const allTasks = yield all(entrySagaEffects.map(saga => fork( saga as any,action)));
-
-    while( true ){
-      const action = (yield take(actionTypes.unregister)) as Action<UnregisterOptions[]>;
-      if (action.payload.some(option=>
-        option.baseNamespace === baseNamespace &&
-        option.key === key
-      )){
+    while (true) {
+      const action = (yield take(actionTypes.unregister)) as Action<
+        UnregisterOptions[]
+      >;
+      if (
+        action.payload.some(
+          (option) =>
+            option.baseNamespace === baseNamespace && option.key === key
+        )
+      ) {
         break;
       }
     }
@@ -125,7 +140,7 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
   function* registerEntriesHandler(action: Action<RegisterOptions[]>) {
     const optionList = action.payload;
 
-    for (const options of optionList){
+    for (const options of optionList) {
       const { baseNamespace, key, modelIndex } = options;
       const models = storeCtx.modelsByBaseNamespace.get(baseNamespace);
       if (models == null) {
@@ -136,45 +151,58 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
       const model = models[modelIndex ?? 0];
       const modelCtx = storeCtx.contextByModel.get(model);
       const container = storeCtx.getContainer(model, key!) as ContainerImpl;
-      const newAction = action as ActionWithFields<any,{context: typeof container.sagaContext}>;
+      const newAction = action as ActionWithFields<
+        any,
+        { context: typeof container.sagaContext }
+      >;
       newAction.context = container.sagaContext;
       const entrySagaEffects: SagaEffect[] = [];
-      modelCtx!.sagaEffectByActionName.forEach((oneSaga,key)=>{
-        if (key.indexOf("$$") !== -1){
+      modelCtx!.sagaEffectByActionName.forEach((oneSaga, key) => {
+        if (key.indexOf("$$") !== -1) {
           entrySagaEffects.push(oneSaga);
         }
       });
-      yield spawn(_doSpawnEntries, newAction,entrySagaEffects, baseNamespace, key);
+      yield spawn(
+        _doSpawnEntries,
+        newAction,
+        entrySagaEffects,
+        baseNamespace,
+        key
+      );
     }
   }
 
-
   return function* defaultHandler() {
     yield all([
-      takeEvery(actionTypes.register,registerEntriesHandler),
-      takeEvery("*",function* defaultInterceptor( action: AnyAction){
+      takeEvery(actionTypes.register, registerEntriesHandler),
+      takeEvery("*", function* defaultInterceptor(action: AnyAction) {
         const [namespace, actionName] = splitLastPart(action.type);
         const container = storeCtx.containerByNamespace.get(namespace);
-        if (container && container.isRegistered){
-          const theSaga = storeCtx.contextByModel.get(container!.model)?.sagaEffectByActionName.get(actionName);
+        if (container && container.isRegistered) {
+          const theSaga = storeCtx.contextByModel
+            .get(container!.model)
+            ?.sagaEffectByActionName.get(actionName);
           // any action name containing _$ or $$ would be regarded as customized saga
           // or root saga wont be yielded by default;
-          if (theSaga){
+          if (theSaga) {
             const deferred = storeCtx.deferredByAction.get(action);
             if (actionName.match(/.*[$_]\$.*/g)) {
               deferred?.resolve({});
-            }else {
-              const newAction = action as ActionWithFields<any,{context: typeof container.sagaContext}>;
+            } else {
+              const newAction = action as ActionWithFields<
+                any,
+                { context: typeof container.sagaContext }
+              >;
               newAction.context = container.sagaContext;
-              try{
-                deferred?.resolve( yield* theSaga(newAction) );
-              }catch (e) {
+              try {
+                deferred?.resolve(yield* theSaga(newAction));
+              } catch (e) {
                 deferred?.reject(e);
               }
             }
           }
         }
-      })
+      }),
     ]);
-  }
+  };
 }

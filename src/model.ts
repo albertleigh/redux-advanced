@@ -2,7 +2,13 @@ import { ExtractActionHelpers, RegisterOptions } from "./action";
 import { ArgsFactory, argsObjectToken, ExtractArgs, ModelArgs } from "./args";
 import { StoreContext } from "./context";
 import { ExtractDependencies } from "./dependencies";
-import { ExtractSagaEffects, LooseSagaEffects, OverrideSagas, SagaEffect, SagaEffects } from "./saga";
+import {
+  ExtractSagaEffects,
+  LooseSagaEffects,
+  OverrideSagas,
+  SagaEffect,
+  SagaEffects,
+} from "./saga";
 import {
   Effect,
   Effects,
@@ -82,7 +88,7 @@ export function cloneModel<T extends Model>(model: T): T {
     reducers: merge({}, model.reducers),
     effects: merge({}, model.effects),
     epics: merge({}, model.epics),
-    sagas: merge({}, model.sagas)
+    sagas: merge({}, model.sagas),
   } as T;
 }
 
@@ -96,7 +102,6 @@ export class ModelBuilder<
   TEpics extends Epics = any,
   TSagas extends SagaEffects = any
 > {
-
   private static readonly _globalId = Date.now();
   private static _nextAnonymousEpicId = 1;
 
@@ -286,7 +291,7 @@ export class ModelBuilder<
 
       sagas = {
         [subKey]: assignObjectDeeply({}, model.sagas, (oldSaga: SagaEffect) => {
-          const newSagaEffect: SagaEffect = function* (action){
+          const newSagaEffect: SagaEffect = function*(action) {
             yield* oldSaga(action);
           };
           return newSagaEffect;
@@ -770,8 +775,8 @@ export class ModelBuilder<
         TState,
         ExtractGetters<TSelectors>,
         ExtractActionHelpers<TReducers, TEffects, TSagas>
-        >
       >
+    >
   ): ModelBuilder<
     TDependencies,
     TArgs,
@@ -781,7 +786,7 @@ export class ModelBuilder<
     TEffects,
     TEpics,
     TSagas
-    > {
+  > {
     if (this._isFrozen) {
       return this.clone().overrideSagas(override);
     }
@@ -860,7 +865,16 @@ export function isModel(obj: any): obj is Model {
   return model != null && typeof model.state === "function";
 }
 
-export function createModelBuilder(): ModelBuilder<{}, {}, {}, {}, {}, {}, {}, {}> {
+export function createModelBuilder(): ModelBuilder<
+  {},
+  {},
+  {},
+  {},
+  {},
+  {},
+  {},
+  {}
+> {
   return new ModelBuilder({
     options: {},
 
@@ -870,7 +884,7 @@ export function createModelBuilder(): ModelBuilder<{}, {}, {}, {}, {}, {}, {}, {
     reducers: {},
     effects: {},
     epics: {},
-    sagas: {}
+    sagas: {},
   });
 }
 

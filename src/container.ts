@@ -42,7 +42,11 @@ export interface Container<TModel extends Model = any>
     ExtractArgs<TModel>,
     ExtractState<TModel>,
     ExtractGetters<ExtractSelectors<TModel>>,
-    ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>, ExtractSagaEffects<TModel>>
+    ExtractActionHelpers<
+      ExtractReducers<TModel>,
+      ExtractEffects<TModel>,
+      ExtractSagaEffects<TModel>
+    >
   > {}
 
 export class ContainerImpl<TModel extends Model = Model>
@@ -184,7 +188,6 @@ export class ContainerImpl<TModel extends Model = Model>
     if (this._sagaContext == null) {
       const self = this;
       this._sagaContext = {
-
         get dependencies() {
           return self._storeContext.getDependencies();
         },
@@ -467,7 +470,11 @@ export function createSubContainer<
   ExtractArgs<TModel>[TSubKey],
   ExtractState<TModel>[TSubKey],
   ExtractGetters<ExtractSelectors<TModel>>[TSubKey],
-  ExtractActionHelpers<ExtractReducers<TModel>, ExtractEffects<TModel>,ExtractSagaEffects<TModel>>[TSubKey]
+  ExtractActionHelpers<
+    ExtractReducers<TModel>,
+    ExtractEffects<TModel>,
+    ExtractSagaEffects<TModel>
+  >[TSubKey]
 > {
   return {
     get baseNamespace(): string {

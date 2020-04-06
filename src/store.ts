@@ -7,7 +7,7 @@ import {
 } from "redux";
 import { createEpicMiddleware, Epic } from "redux-observable";
 import { mergeMap, switchMap } from "rxjs/operators";
-import {default as createSagaMiddleware} from "redux-saga"
+import { default as createSagaMiddleware } from "redux-saga";
 import { SagaMiddleware } from "@redux-saga/core";
 import { registerActionHelper, reloadActionHelper } from "./action";
 import { Container, GetContainer } from "./container";
@@ -15,7 +15,7 @@ import { createStoreContext } from "./context";
 import { createMiddleware } from "./middleware";
 import { Models, registerModels } from "./model";
 import { createReduxReducer } from "./reducer";
-import { rootSagaBuilder } from './saga';
+import { rootSagaBuilder } from "./saga";
 
 export interface ReduxAdvancedOptions {
   dependencies: any;
@@ -31,7 +31,7 @@ export interface ReduxAdvancedOptions {
   onUnhandledEffectError?: (error: any) => void;
   onUnhandledEpicError?: (error: any) => void;
 
-  enableSaga?: boolean| undefined;
+  enableSaga?: boolean | undefined;
 }
 
 export interface ReduxAdvancedInstance {
@@ -67,16 +67,14 @@ export function init(options: ReduxAdvancedOptions): ReduxAdvancedInstance {
     const epicMiddleware = createEpicMiddleware();
     let enhancer;
     let sagaMiddleware: SagaMiddleware<any> | undefined;
-    if (options.enableSaga){
+    if (options.enableSaga) {
       sagaMiddleware = createSagaMiddleware();
-      enhancer=applyMiddleware(middleware, epicMiddleware,sagaMiddleware);
-    }else{
-      enhancer=applyMiddleware(middleware, epicMiddleware);
+      enhancer = applyMiddleware(middleware, epicMiddleware, sagaMiddleware);
+    } else {
+      enhancer = applyMiddleware(middleware, epicMiddleware);
     }
 
-    storeContext.store = createStore(
-      rootReducer,enhancer
-    );
+    storeContext.store = createStore(rootReducer, enhancer);
     epicMiddleware.run(rootEpic);
     sagaMiddleware && sagaMiddleware!.run(rootSagaBuilder(storeContext));
   }

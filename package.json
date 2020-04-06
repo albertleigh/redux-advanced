@@ -19,7 +19,7 @@
     }
   ],
   "license": "MIT",
-  "repository": "github:SpringNyan/redux-advanced",
+  "repository": "git@github.com:albertleigh/redux-advanced.git",
   "keywords": [
     "redux",
     "typescript"
@@ -55,6 +55,8 @@
   "scripts": {
     "build": "rimraf dist lib && tsc -p . && rollup -c",
     "test": "jest",
-    "release": "npm run build && npm publish"
+    "prettify": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
+    "release-beta": "npm run build && npm publish --tag beta --dry-run",
+    "release": "npm run build && npm publish --dry-run"
   }
 }

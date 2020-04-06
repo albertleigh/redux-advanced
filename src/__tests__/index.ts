@@ -9,17 +9,16 @@ interface Dependencies {
 const defaultModelBuilder = createModelBuilder()
   .dependencies<Dependencies>()
   .freeze();
-describe ("root index", ()=>{
-
+describe("root index", () => {
   let setAge2Count = 0;
   let setAge2Count2 = 0;
 
-  beforeEach(()=>{
+  beforeEach(() => {
     setAge2Count = 0;
     setAge2Count2 = 0;
-  })
+  });
 
-  it ("one shot", async ()=>{
+  it("one shot", async () => {
     const testModelBuilder = defaultModelBuilder
       .state(() => ({
         name: "",
@@ -396,5 +395,5 @@ describe ("root index", ()=>{
     gc((container) => container.baseNamespace === "autoRegisteredDynamicModel");
     expect(autoRegisteredDynamicContainer.isRegistered).toBe(false);
     expect(staticModelContainer.isRegistered).toBe(true);
-  })
+  });
 });

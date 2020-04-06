@@ -2,7 +2,7 @@
 
 A state management library based on Redux.
 
-[![npm version](https://img.shields.io/npm/v/redux-advanced.svg)](https://www.npmjs.com/package/redux-advanced)
+[![npm version](https://img.shields.io/npm/v/@albertli90/redux-advanced.svg)](https://www.npmjs.com/package/@albertli90/redux-advanced)
 
 ## Installation
 

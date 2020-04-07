@@ -8,6 +8,7 @@ import {
 import { createEpicMiddleware, Epic } from "redux-observable";
 import { mergeMap, switchMap } from "rxjs/operators";
 import { default as createSagaMiddleware } from "redux-saga";
+import { Saga } from "@redux-saga/types";
 import { SagaMiddleware } from "@redux-saga/core";
 import { registerActionHelper, reloadActionHelper } from "./action";
 import { Container, GetContainer } from "./container";
@@ -24,6 +25,7 @@ export interface ReduxAdvancedOptions {
     reducer: Reducer;
     epic: Epic;
     middleware: Middleware;
+    saga?: Saga;
   }) => Store;
 
   resolveActionName?: (paths: string[]) => string;
@@ -62,6 +64,7 @@ export function init(options: ReduxAdvancedOptions): ReduxAdvancedInstance {
       reducer: rootReducer,
       epic: rootEpic,
       middleware,
+      saga: options.enableSaga? rootSagaBuilder(storeContext) : undefined
     });
   } else {
     const epicMiddleware = createEpicMiddleware();

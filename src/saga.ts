@@ -49,7 +49,7 @@ export type SagaEffect<
   [Symbol.iterator](): Iterator<
     StrictEffect,
     TResult,
-    ActionWithFields<TPayload, { context: SagaContext }>
+    ActionWithFields<TPayload, { context: SagaContext }| any[] | any>
   >;
 };
 

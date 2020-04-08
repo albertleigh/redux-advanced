@@ -184,18 +184,20 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
             ?.sagaEffectByActionName.get(actionName);
           // any action name containing _$ or $$ would be regarded as customized saga
           // or root saga wont be yielded by default;
-          if (theSaga) {
+          if (!!theSaga) {
             const deferred = storeCtx.deferredByAction.get(action);
             if (actionName.match(/.*[$_]\$.*/g)) {
               deferred?.resolve({});
             } else {
-              const newAction = action as ActionWithFields<
-                any,
+              const newAction = {} as ActionWithFields<
+                typeof action.payload,
                 { context: typeof container.sagaContext }
               >;
+              newAction.payload = action.payload;
               newAction.context = container.sagaContext;
               try {
-                deferred?.resolve(yield* theSaga(newAction));
+                const result = yield* theSaga(newAction);
+                deferred?.resolve(result);
               } catch (e) {
                 deferred?.reject(e);
               }

@@ -57,7 +57,7 @@ describe("saga api testes", () => {
             actions._$tkeLatestChange.saga
           );
           const custemAct = yield take(actions._$customChange.type);
-          yield* actions._$customChange.saga(custemAct);
+          yield* actions._$customChange.saga(custemAct.payload);
         },
       })
       .build();

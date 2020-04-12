@@ -1,5 +1,5 @@
 import { StrictEffect } from "@redux-saga/types";
-import { call } from "redux-saga/effects";
+import { apply } from "redux-saga/effects";
 import { ContainerImpl } from "./container";
 import { StoreContext } from "./context";
 import {
@@ -38,8 +38,8 @@ export interface ActionHelper<TPayload = any, TResult = any> {
   create(payload: TPayload): Action<TPayload>;
   dispatch(payload: TPayload): Promise<TResult>;
   saga(
-    action: Action<TPayload>
-  ): { [Symbol.iterator](): Iterator<StrictEffect, TResult, Action<TPayload>> };
+    action: TPayload
+  ): { [Symbol.iterator](): Iterator<StrictEffect, TResult, Action<unknown>> };
 }
 
 export interface ActionHelpers {
@@ -176,12 +176,17 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     const theSaga = this._storeContext.contextByModel
       .get(this._container.model)
       ?.sagaEffectByActionName.get(actionName);
-    if (theSaga) {
-      return theSaga;
+    if (!!theSaga) {
+      return function* (payload: TPayload) {
+        return yield* theSaga(self.create(payload) as ActionWithFields<
+          TPayload,
+          { context: SagaContext }
+        >)
+      };
     } else {
       // cheap compatible solution, should be avoided via call(action.dispatch, {})
-      return function*(action: any) {
-        yield call(self.dispatch, action.payload);
+      return function*(payload: TPayload) {
+        yield apply(self, "dispatch", [payload] as any);
       };
     }
   }

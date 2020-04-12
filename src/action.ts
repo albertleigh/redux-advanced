@@ -38,7 +38,7 @@ export interface ActionHelper<TPayload = any, TResult = any> {
   create(payload: TPayload): Action<TPayload>;
   dispatch(payload: TPayload): Promise<TResult>;
   saga(
-    action: TPayload
+    payload: TPayload
   ): { [Symbol.iterator](): Iterator<StrictEffect, TResult, Action<unknown>> };
 }
 
@@ -177,7 +177,7 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
       .get(this._container.model)
       ?.sagaEffectByActionName.get(actionName);
     if (!!theSaga) {
-      return function* (payload: TPayload) {
+      return function* (payload: TPayload){
         return yield* theSaga(self.create(payload) as ActionWithFields<
           TPayload,
           { context: SagaContext }
@@ -186,7 +186,7 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     } else {
       // cheap compatible solution, should be avoided via call(action.dispatch, {})
       return function*(payload: TPayload) {
-        yield apply(self, "dispatch", [payload] as any);
+        return yield apply(self, "dispatch", [payload] as any);
       };
     }
   }

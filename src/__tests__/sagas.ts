@@ -99,4 +99,38 @@ describe("saga api testes", () => {
     expect(basicCtn.getState().age).toBe(6);
     expect(basicCtn.getState().name).toBe("basicName_custom_latest_latest");
   });
+
+  it ('verify root registered payload', async ()=>{
+    let theAct: any;
+    const basicModel = defaultModelBuilder
+      .sagas({
+        // eslint-disable-next-line require-yield
+        _$tkePayload: function* (action) {
+          theAct = action;
+        }
+      })
+      .sagas({
+        $$rootEntry: function* (action) {
+          const { actions } = action.context;
+          yield takeLatest(actions._$tkePayload.type, actions._$tkePayload.saga);
+        }
+      })
+      .build();
+
+    const dependencies: Dependencies = { appId: 2 };
+
+    const { getContainer, registerModels, gc } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({ basicModel });
+    const basicCtn = getContainer(basicModel);
+
+    await basicCtn.actions._$tkePayload.dispatch({innerTyp:"_$tkePayload"});
+
+    expect(theAct['context']).toBeDefined();
+    expect(theAct.payload['context']).toBeUndefined();
+
+  })
 });

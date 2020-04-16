@@ -178,10 +178,19 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
       ?.sagaEffectByActionName.get(actionName);
     if (!!theSaga) {
       return function* (payload: TPayload){
-        return yield* theSaga(self.create(payload) as ActionWithFields<
-          TPayload,
-          { context: SagaContext }
-        >)
+        let arg;
+        if (!!(payload as any)['context']) {
+          arg = self.create((payload as any).payload) as ActionWithFields<
+            TPayload,
+            { context: SagaContext }
+            >;
+        }else {
+          arg = self.create(payload) as ActionWithFields<
+            TPayload,
+            { context: SagaContext }
+            >;
+        }
+        return yield* theSaga(arg);
       };
     } else {
       // cheap compatible solution, should be avoided via call(action.dispatch, {})

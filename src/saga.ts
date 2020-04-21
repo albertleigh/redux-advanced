@@ -162,13 +162,15 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
           entrySagaEffects.push(oneSaga);
         }
       });
-      yield spawn(
-        _doSpawnEntries,
-        newAction,
-        entrySagaEffects,
-        baseNamespace,
-        key
-      );
+      if (entrySagaEffects.length> 0) {
+        yield spawn(
+          _doSpawnEntries,
+          newAction,
+          entrySagaEffects,
+          baseNamespace,
+          key
+        );
+      }
     }
   }
 

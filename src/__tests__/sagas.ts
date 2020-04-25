@@ -1,5 +1,5 @@
 import { createModelBuilder, init } from "../index";
-import { put, take, takeLatest } from "redux-saga/effects";
+import { call, put, take, takeLatest } from "redux-saga/effects";
 
 interface Dependencies {
   appId: number;
@@ -133,4 +133,45 @@ describe("saga api testes", () => {
     expect(theAct.payload['context']).toBeUndefined();
 
   })
+
+  it ('verify dispatch response', async ()=>{
+    const obj = { data: "success"};
+
+    const dummyFetch = ()=> new Promise((res)=>{
+      setTimeout(()=>{
+        res(obj)
+      }, 500);
+    })
+
+    const basicModel = defaultModelBuilder
+        .sagas({
+          fetchEffect: function* () {
+            return yield call(dummyFetch);
+          },
+          _$privateFetchEffect: function* () {
+            return yield call(dummyFetch);
+          }
+        })
+        .build();
+
+    const dependencies: Dependencies = { appId: 2 };
+
+    const { getContainer, registerModels, gc } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({ basicModel });
+    const basicCtn = getContainer(basicModel);
+
+    let res = await basicCtn.actions.fetchEffect.dispatch({innerTyp: "_$tkePayload"});
+
+    expect(res).toBe(obj);
+
+    res = await basicCtn.actions._$privateFetchEffect.dispatch({innerTyp: "_$tkePayload"});
+
+    expect(JSON.stringify(res)).toBe("{}");
+
+  })
+
 });

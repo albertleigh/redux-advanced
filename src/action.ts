@@ -47,7 +47,7 @@ export interface ActionHelpers {
 }
 
 export type ExtractActionPayload<
-  T extends Action | ActionHelper | Reducer | Effect
+  T extends Action | ActionHelper | Reducer | Effect | SagaEffect
 > = T extends
   | Action<infer TPayload>
   | ActionHelper<infer TPayload, any>
@@ -58,7 +58,7 @@ export type ExtractActionPayload<
   : never;
 
 export type ExtractActionDispatchResult<
-  T extends ActionHelper | Effect
+  T extends ActionHelper | Effect | SagaEffect
 > = T extends
   | ActionHelper<any, infer TResult>
   | Effect<any, any, any, any, any, infer TResult>
@@ -67,12 +67,12 @@ export type ExtractActionDispatchResult<
   : never;
 
 export type ExtractActionHelperPayloadResultPairs<
-  T extends Reducers | Effects
+  T extends Reducers | Effects | SagaEffect
 > = {
   [P in keyof T]: T[P] extends (...args: any[]) => any
     ? [
         ExtractActionPayload<T[P]>,
-        T[P] extends Effect ? ExtractActionDispatchResult<T[P]> : unknown
+        T[P] extends (Effect | SagaEffect) ? ExtractActionDispatchResult<T[P]> : unknown
       ]
     : T[P] extends {}
     ? ExtractActionHelperPayloadResultPairs<T[P]>

@@ -17,6 +17,11 @@ import { Model } from "./model";
 import { StoreContext } from "./context";
 import { splitLastPart } from "./util";
 
+export type SGA<
+  P, D=any, S extends object = any, G extends Getters = any,
+  A extends ActionHelpers = any
+  > = ActionWithFields<P, {context: SagaContext<D,S,G,A>}>
+
 export interface SagaContext<
   TDependencies = any,
   TState extends object = any,
@@ -43,15 +48,13 @@ export type SagaEffect<
   TActionHelpers extends ActionHelpers = any,
   TPayload = any,
   TResult = any
-> = (
-  action: ActionWithFields<TPayload, { context: SagaContext }>
-) => unknown & {
-  [Symbol.iterator](): Iterator<
+> = (action: SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers>)
+     =>
+  Generator<
     StrictEffect,
     TResult,
-    ActionWithFields<TPayload, { context: SagaContext }| any[] | any>
-  >;
-};
+    SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers> | any[] | any
+  >
 
 export interface SagaEffects<
   TDependencies = any,

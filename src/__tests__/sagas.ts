@@ -1,5 +1,5 @@
-import { createModelBuilder, init } from "../index";
-import { call, put, take, takeLatest } from "redux-saga/effects";
+import { createModelBuilder, init, SGA } from "../index";
+import { call, delay, put, take, takeLatest } from "redux-saga/effects";
 
 interface Dependencies {
   appId: number;
@@ -171,6 +171,64 @@ describe("saga api testes", () => {
     res = await basicCtn.actions._$privateFetchEffect.dispatch({innerTyp: "_$tkePayload"});
 
     expect(JSON.stringify(res)).toBe("{}");
+
+  })
+
+  it('verify result typ',async ()=>{
+    const basicModel = defaultModelBuilder
+      .sagas({
+        task01:function*() {
+          const millsToDelay = 218;
+          yield delay(millsToDelay);
+          return {
+            typ: 'task01',
+            millsToDelay,
+          }
+        },
+        task02:function*() {
+          const millsToDelay = 219;
+          yield delay(millsToDelay);
+          return {
+            typ: 'task01',
+            millsToDelay,
+          }
+        },
+        task03:function*(action: SGA<{
+          extraField: string;
+        }>) {
+          const py = action.payload;
+          const millsToDelay = 220;
+          yield delay(millsToDelay);
+          return {
+            typ: 'task01',
+            millsToDelay,
+            extra: py.extraField
+
+          }
+        },
+      })
+    .build();
+
+    const dependencies: Dependencies = { appId: 3 };
+
+    const { getContainer, registerModels, gc } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({ basicModel });
+    const basicCtn = getContainer(basicModel);
+
+    const res1 = await basicCtn.actions.task01.dispatch({});
+
+    expect(res1.typ).toBeDefined();
+    expect(res1.millsToDelay).toBeDefined();
+
+    const res3 = await basicCtn.actions.task03.dispatch({extraField: 'extPlFd'});
+
+    expect(res3.typ).toBeDefined();
+    expect(res3.millsToDelay).toBeDefined();
+    expect(res3.extra).toBeDefined();
 
   })
 

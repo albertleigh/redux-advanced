@@ -1,9 +1,8 @@
 import { createModelBuilder, init, SGA } from "../index";
 import { apply, call, cancel, cancelled, delay, fork, put, putResolve, take, takeLatest } from "redux-saga/effects";
 import { ofType } from 'redux-observable';
-import { tap, takeUntil, mergeMap } from "rxjs/operators";
-import { ajax } from "rxjs/ajax";
-import { Observable, of } from "rxjs";
+import { tap, takeUntil, mergeMap, mergeMapTo } from "rxjs/operators";
+import { empty } from "rxjs";
 
 interface Dependencies {
   appName: string;
@@ -540,17 +539,16 @@ describe("saga api demo purpose test cases", ()=>{
                 await actions.setLoading.dispatch(true);
                 return action;
               }),
-              // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-              // @ts-ignore
-              mergeMap(action => of(action)).pipe(
-                tap(async () => {
-                  const res = await dummyApi();
-                  await actions.setResult.dispatch(res);
-                })
-              ),
+              mergeMap(()=>{
+                dummyApi().then(res=>{
+                  return actions.setResult.dispatch(res);
+                }).then();
+                return empty()
+              }),
               takeUntil(rootAction$.pipe(
                 ofType(actions.setCancelledFields.type)
               )),
+              mergeMapTo(empty())
             );
         }
       ])

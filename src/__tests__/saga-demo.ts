@@ -192,7 +192,13 @@ describe("saga api demo purpose test cases", ()=>{
 
           // since actions is an class with class context, better use apply to
           // keep the context
-          yield apply(actions.thunkTask, "dispatch", [{py: "py str"}]);
+          const res = yield apply(actions.thunkTask, "dispatch", [{py: "py str"}]);
+
+          expect(res.result).toBeDefined();
+          // todo: Oops the result type has been wiped out by apply effect ....
+          // maybe a helper converter can help to keep the type, i will think about it
+          expect(res.result2).toBeUndefined();
+          expect(res.result).toBeDefined();
 
         }
       })
@@ -265,7 +271,17 @@ describe("saga api demo purpose test cases", ()=>{
           // typed err
           // yield* actions.task03.saga({extraField: "ext"})
 
-          yield* actions.task02.saga({extraField: "ext"})
+          const res = yield* actions.task02.saga({extraField: "ext"})
+
+          // the result of saga would be typed
+          // uncomment to check the type err
+          // expect(res.typ2).toBeUndefined();
+
+          expect(res.typ).toBeDefined();
+          expect(res.millsToDelay).toBeDefined();
+          expect(res.extra).toBeDefined();
+
+
         }
 
       })

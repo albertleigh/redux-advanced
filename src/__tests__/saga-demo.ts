@@ -1,5 +1,9 @@
 import { createModelBuilder, init, SGA } from "../index";
 import { apply, call, cancel, cancelled, delay, fork, put, putResolve, take, takeLatest } from "redux-saga/effects";
+import { ofType } from 'redux-observable';
+import { tap, takeUntil, mergeMap } from "rxjs/operators";
+import { ajax } from "rxjs/ajax";
+import { Observable, of } from "rxjs";
 
 interface Dependencies {
   appName: string;
@@ -485,4 +489,121 @@ describe("saga api demo purpose test cases", ()=>{
     })
 
   });
+
+  describe("cancel thunk/observable example suite", () => {
+
+    const cancelStr = "Sync Cancelled!";
+    const dummyObj = {data:"Success"};
+    const dummyApi = ()=> new Promise((res)=>{
+      setTimeout(()=>{
+        res(dummyObj);
+      }, 500);
+    })
+
+    const basicModel = defaultModelBuilder
+      .state(() => ({
+        loading: false,
+        result: {} as any,
+        errMsg: "",
+        cancelled: false,
+      }))
+      .reducers({
+        setLoading(state, payload: boolean) {
+          state.loading = payload;
+        },
+        setResult(state, payload: any) {
+          state.result = payload;
+          state.loading = false;
+        },
+        setErrMsg(state, msg: string) {
+          state.errMsg = msg;
+          state.loading = false;
+        },
+        // i am super lazy to create another fake action
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        startComplexFetch(){}
+      })
+      .effects({
+        setCancelledFields: async (ctx)=>{
+          const { actions } = ctx;
+          await actions.setErrMsg.dispatch(cancelStr);
+        }
+      })
+      .epics([
+        ({rootAction$,actions}) => {
+          return rootAction$
+            .pipe(
+              ofType(actions.startComplexFetch.type),
+              tap(async (action)=>{
+                // Oops untyped, the same as saga take typeless by default euh?
+                expect(action.payload.something).toBeUndefined();
+                await actions.setLoading.dispatch(true);
+                return action;
+              }),
+              // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+              // @ts-ignore
+              mergeMap(action => of(action)).pipe(
+                tap(async () => {
+                  const res = await dummyApi();
+                  await actions.setResult.dispatch(res);
+                })
+              ),
+              takeUntil(rootAction$.pipe(
+                ofType(actions.setCancelledFields.type)
+              )),
+            );
+        }
+      ])
+      .build();
+
+    it("do not cancel",async ()=>{
+
+      jest.useFakeTimers()
+
+      const dependencies: Dependencies = {appName: 'cancel thunk/observable'};
+      const { getContainer, registerModels, gc, store } = init({
+        dependencies,
+        enableSaga: true,
+      });
+
+      registerModels({ basicModel });
+      const basicCtn = getContainer(basicModel);
+
+      store.dispatch({
+        type: basicCtn.actions.startComplexFetch.type,
+        payload: {}
+      })
+
+      jest.advanceTimersByTime(601);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(basicCtn.getState().loading).toBe(false);
+      expect(basicCtn.getState().result).toBe(dummyObj);
+      expect(basicCtn.getState().errMsg).toBe("");
+
+    })
+
+    it("cancelled",async ()=>{
+
+      const dependencies: Dependencies = {appName: 'cancel thunk/observable'};
+      const { getContainer, registerModels, gc, store } = init({
+        dependencies,
+        enableSaga: true,
+      });
+
+      registerModels({ basicModel });
+      const basicCtn = getContainer(basicModel);
+
+      store.dispatch({
+        type: basicCtn.actions.startComplexFetch.type,
+        payload: {}
+      })
+      await basicCtn.actions.setCancelledFields.dispatch({});
+
+      expect(basicCtn.getState().loading).toBe(false);
+      expect(JSON.stringify(basicCtn.getState().result)).toMatch("{}");
+      expect(basicCtn.getState().errMsg).toBe(cancelStr);
+
+    })
+  })
 })

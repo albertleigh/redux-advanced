@@ -72,7 +72,9 @@ export type ExtractActionHelperPayloadResultPairs<
   [P in keyof T]: T[P] extends (...args: any[]) => any
     ? [
         ExtractActionPayload<T[P]>,
-        T[P] extends (Effect | SagaEffect) ? ExtractActionDispatchResult<T[P]> : unknown
+        T[P] extends Effect | SagaEffect
+          ? ExtractActionDispatchResult<T[P]>
+          : unknown
       ]
     : T[P] extends {}
     ? ExtractActionHelperPayloadResultPairs<T[P]>
@@ -177,18 +179,18 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
       .get(this._container.model)
       ?.sagaEffectByActionName.get(actionName);
     if (!!theSaga) {
-      return function* (payload: TPayload){
+      return function*(payload: TPayload) {
         let arg;
-        if (!!(payload as any)['context']) {
+        if (!!(payload as any)["context"]) {
           arg = self.create((payload as any).payload) as ActionWithFields<
             TPayload,
             { context: SagaContext }
-            >;
-        }else {
+          >;
+        } else {
           arg = self.create(payload) as ActionWithFields<
             TPayload,
             { context: SagaContext }
-            >;
+          >;
         }
         return yield* theSaga(arg);
       };

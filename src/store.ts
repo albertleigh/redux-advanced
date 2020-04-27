@@ -64,7 +64,7 @@ export function init(options: ReduxAdvancedOptions): ReduxAdvancedInstance {
       reducer: rootReducer,
       epic: rootEpic,
       middleware,
-      saga: options.enableSaga? rootSagaBuilder(storeContext) : undefined
+      saga: options.enableSaga ? rootSagaBuilder(storeContext) : undefined,
     });
   } else {
     const epicMiddleware = createEpicMiddleware();

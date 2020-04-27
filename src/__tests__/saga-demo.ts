@@ -1,6 +1,17 @@
 import { createModelBuilder, init, SGA } from "../index";
-import { apply, call, cancel, cancelled, delay, fork, put, putResolve, take, takeLatest } from "redux-saga/effects";
-import { ofType } from 'redux-observable';
+import {
+  apply,
+  call,
+  cancel,
+  cancelled,
+  delay,
+  fork,
+  put,
+  putResolve,
+  take,
+  takeLatest,
+} from "redux-saga/effects";
+import { ofType } from "redux-observable";
 import { tap, takeUntil, mergeMap, mergeMapTo } from "rxjs/operators";
 import { empty } from "rxjs";
 
@@ -12,15 +23,13 @@ const defaultModelBuilder = createModelBuilder()
   .dependencies<Dependencies>()
   .freeze();
 
-describe("saga api demo purpose test cases", ()=>{
-
+describe("saga api demo purpose test cases", () => {
   // first of all, a new effect group called sagas is added
   // basically if functions almost the same as previous effects group
-  it("simple example", async()=>{
-
-    const someFun = jest.fn().mockImplementation((str: string)=>{
-      console.log("[mocked::someFun]",str);
-    })
+  it("simple example", async () => {
+    const someFun = jest.fn().mockImplementation((str: string) => {
+      console.log("[mocked::someFun]", str);
+    });
 
     const dependencies: Dependencies = { appName: "simple" };
 
@@ -29,7 +38,7 @@ describe("saga api demo purpose test cases", ()=>{
         helloSaga: function*() {
           yield delay(100);
           someFun("hello saga effect via generator");
-        }
+        },
       })
       .build();
 
@@ -44,15 +53,14 @@ describe("saga api demo purpose test cases", ()=>{
     const basicCtn = getContainer(basicModel);
 
     // still we can dispatch saga effect like thunk effect before
-    await basicCtn.actions.helloSaga.dispatch({})
+    await basicCtn.actions.helloSaga.dispatch({});
 
     // function called, console logged to and the effect mission cleared
     expect(someFun).toBeCalled();
 
     // by default, all un specific effect names will be `takeEvery`ed as it
     // would usually be the most common use cases
-
-  })
+  });
 
   // benefits of using saga effect: saga effects can be regarded as the
   // combination of thunk effect and rx-observable, with saga effect it no
@@ -60,7 +68,7 @@ describe("saga api demo purpose test cases", ()=>{
   // additionally, comparing thunk w/ observable, saga requires less codes to
   // achieve a equivalent functionally, in a nutshell,
   // the less codes the less troubles
-  it("complex example", async()=> {
+  it("complex example", async () => {
     // before we dig in there are two reserved pattern utilized by saga groups
     // 1) any saga "_$" in the path chain will be regarded as self handled saga
     //  middleware won't intercept it by default
@@ -160,29 +168,26 @@ describe("saga api demo purpose test cases", ()=>{
     await basicCtn.actions._$tkeLatestChange.dispatch({});
     expect(basicCtn.getState().age).toBe(6);
     expect(basicCtn.getState().name).toBe("basicName_custom_latest_latest");
-
-  })
+  });
 
   // hybrid example
-  it("hybrid example", async()=>{
-
-    const someFun = jest.fn().mockImplementation((str: string)=>{
-      console.log("[mocked::someFun]",str);
-    })
+  it("hybrid example", async () => {
+    const someFun = jest.fn().mockImplementation((str: string) => {
+      console.log("[mocked::someFun]", str);
+    });
 
     const dependencies: Dependencies = { appName: "hybrid" };
 
     const basicModel = defaultModelBuilder
       .effects({
-        thunkTask: async (ctx, payload: {py: string})=>{
-          return await new Promise<{result: string}>((res)=>{
-            setTimeout(()=>{
+        thunkTask: async (ctx, payload: { py: string }) => {
+          return await new Promise<{ result: string }>((res) => {
+            setTimeout(() => {
               someFun(payload.py);
-              res({ result: "thunk task cleared" })
+              res({ result: "thunk task cleared" });
             }, 100);
-          })
-        }
-
+          });
+        },
       })
       .sagas({
         sagaTask: function*(action) {
@@ -195,15 +200,16 @@ describe("saga api demo purpose test cases", ()=>{
 
           // since actions is an class with class context, better use apply to
           // keep the context
-          const res = yield apply(actions.thunkTask, "dispatch", [{py: "py str"}]);
+          const res = yield apply(actions.thunkTask, "dispatch", [
+            { py: "py str" },
+          ]);
 
           expect(res.result).toBeDefined();
           // todo: Oops the result type has been wiped out by apply effect ....
           // maybe a helper converter can help to keep the type, i will think about it
           expect(res.result2).toBeUndefined();
           expect(res.result).toBeDefined();
-
-        }
+        },
       })
       .build();
 
@@ -218,47 +224,42 @@ describe("saga api demo purpose test cases", ()=>{
     const basicCtn = getContainer(basicModel);
 
     // still we can dispatch saga effect like thunk effect before
-    await basicCtn.actions.sagaTask.dispatch({})
+    await basicCtn.actions.sagaTask.dispatch({});
 
     // function called, console logged to and the effect mission cleared
     expect(someFun).toBeCalled();
 
     // by default, all un specific effect names will be `takeEvery`ed as it
     // would usually be the most common use cases
-
-  })
-
+  });
 
   // unregistered example
-  it("unregistered example", async ()=>{
-
+  it("unregistered example", async () => {
     const FAKE_ACT_NAME = "FAKE_ACT_NAME";
-    const fakeActCreator = ()=> ({
+    const fakeActCreator = () => ({
       type: FAKE_ACT_NAME,
-      payload: {}
-    })
+      payload: {},
+    });
 
     let oneSagaTaskCtn = 0;
 
-    const staticModel = defaultModelBuilder
-      .build();
+    const staticModel = defaultModelBuilder.build();
     const dynamicModel = defaultModelBuilder
       .sagas({
         _$oneSagaTask: function*() {
           oneSagaTaskCtn++;
           yield delay(100);
-        }
-
+        },
       })
       .sagas({
         $$rootEntry: function*(action) {
-          const {actions} = action.context;
+          const { actions } = action.context;
           yield takeLatest(FAKE_ACT_NAME, actions._$oneSagaTask.saga);
-        }
+        },
       })
       .build();
 
-    const dependencies: Dependencies = {appName: 'unregistered'}
+    const dependencies: Dependencies = { appName: "unregistered" };
 
     const { getContainer, registerModels, gc, store } = init({
       dependencies,
@@ -267,7 +268,7 @@ describe("saga api demo purpose test cases", ()=>{
 
     registerModels({
       stat: staticModel,
-      dyn: [dynamicModel]
+      dyn: [dynamicModel],
     });
 
     const dynCtn = getContainer(dynamicModel, "1");
@@ -287,39 +288,39 @@ describe("saga api demo purpose test cases", ()=>{
     // dynamic model unregistered yet, won't trigger the saga
     store.dispatch(fakeActCreator());
     expect(oneSagaTaskCtn).toBe(1);
-  })
+  });
 
   // another key concern of redux-advanced is implying typing, new saga
   // effect group also keep those in minds, at least will bear all the
   // typing implying that thunk effect group has
-  it("typing example", async()=> {
-
+  it("typing example", async () => {
     const basicModel = defaultModelBuilder
       .sagas({
-        task01:function*() {
+        task01: function*() {
           const millsToDelay = 218;
           yield delay(millsToDelay);
           return {
-            typ: 'task01',
+            typ: "task01",
             millsToDelay,
-          }
+          };
         },
-        task02:function*(action: SGA<{
-          extraField: string;
-        }>) {
+        task02: function*(
+          action: SGA<{
+            extraField: string;
+          }>
+        ) {
           const py = action.payload;
           const millsToDelay = 220;
           yield delay(millsToDelay);
           return {
-            typ: 'task02',
+            typ: "task02",
             millsToDelay,
-            extra: py.extraField
-
-          }
+            extra: py.extraField,
+          };
         },
       })
       .sagas({
-        task04:function* (action){
+        task04: function*(action) {
           const { actions } = action.context;
 
           // the payload of saga generator would be typed
@@ -332,7 +333,7 @@ describe("saga api demo purpose test cases", ()=>{
           // typed err
           // yield* actions.task03.saga({extraField: "ext"})
 
-          const res = yield* actions.task02.saga({extraField: "ext"})
+          const res = yield* actions.task02.saga({ extraField: "ext" });
 
           // the result of saga would be typed
           // uncomment to check the type err
@@ -341,9 +342,7 @@ describe("saga api demo purpose test cases", ()=>{
           expect(res.typ).toBeDefined();
           expect(res.millsToDelay).toBeDefined();
           expect(res.extra).toBeDefined();
-
-        }
-
+        },
       })
       .build();
 
@@ -365,7 +364,9 @@ describe("saga api demo purpose test cases", ()=>{
     // the payload of dispatched promise would be typed
     // uncomment to check the type err
     // const _res2 = await basicCtn.actions.task02.dispatch({ext: 'extPlFd'});
-    const res2 = await basicCtn.actions.task02.dispatch({extraField: 'extPlFd'});
+    const res2 = await basicCtn.actions.task02.dispatch({
+      extraField: "extPlFd",
+    });
 
     expect(res2.typ).toBeDefined();
     // the result of dispatched promise would be typed
@@ -373,20 +374,19 @@ describe("saga api demo purpose test cases", ()=>{
     // expect(res2.typ2).toBeDefined();
     expect(res2.millsToDelay).toBeDefined();
     expect(res2.extra).toBeDefined();
-
-  })
+  });
 
   // let's have one cancel example for fun
 
   describe("cancel example suite", () => {
-
     const cancelStr = "Sync Cancelled!";
-    const dummyObj = {data:"Success"};
-    const dummyApi = ()=> new Promise((res)=>{
-      setTimeout(()=>{
-        res(dummyObj);
-      }, 500);
-    })
+    const dummyObj = { data: "Success" };
+    const dummyApi = () =>
+      new Promise((res) => {
+        setTimeout(() => {
+          res(dummyObj);
+        }, 500);
+      });
 
     const basicModel = defaultModelBuilder
       .state(() => ({
@@ -408,7 +408,7 @@ describe("saga api demo purpose test cases", ()=>{
         },
         // i am super lazy to create another fake action
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        setCancelledFields(){}
+        setCancelledFields() {},
       })
       .sagas({
         _$bgSync: function*(action) {
@@ -419,25 +419,25 @@ describe("saga api demo purpose test cases", ()=>{
             yield putResolve(actions.setResult.create(res));
           } finally {
             if (yield cancelled())
-              yield put(actions.setErrMsg.create(cancelStr))
+              yield put(actions.setErrMsg.create(cancelStr));
           }
-        }
+        },
       })
       .sagas({
         // usually, throttling is need, but for simplicity takeEvery is good enough for demo
         startComplexFetch: function*(action) {
-          const {actions} = action.context;
-          const bgSyncTask = yield fork(actions._$bgSync.saga, {})
+          const { actions } = action.context;
+          const bgSyncTask = yield fork(actions._$bgSync.saga, {});
           yield take(actions.setCancelledFields.type);
           yield cancel(bgSyncTask);
-        }
+        },
       })
       .build();
 
-    it ("do not cancel", async ()=> {
+    it("do not cancel", async () => {
       jest.useFakeTimers();
 
-      const dependencies: Dependencies = {appName: 'donot cancel'};
+      const dependencies: Dependencies = { appName: "donot cancel" };
 
       const { getContainer, registerModels, gc, store } = init({
         dependencies,
@@ -450,21 +450,19 @@ describe("saga api demo purpose test cases", ()=>{
 
       store.dispatch({
         type: basicCtn.actions.startComplexFetch.type,
-        payload: {}
-      })
+        payload: {},
+      });
 
       jest.advanceTimersByTime(600);
-      await new Promise(resolve => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
 
       expect(basicCtn.getState().loading).toBe(false);
       expect(basicCtn.getState().result).toBe(dummyObj);
       expect(basicCtn.getState().errMsg).toBe("");
+    });
 
-    })
-
-    it ("cancelled", async ()=> {
-
-      const dependencies: Dependencies = {appName: 'cancelled'};
+    it("cancelled", async () => {
+      const dependencies: Dependencies = { appName: "cancelled" };
 
       const { getContainer, registerModels, gc, store } = init({
         dependencies,
@@ -477,27 +475,25 @@ describe("saga api demo purpose test cases", ()=>{
 
       store.dispatch({
         type: basicCtn.actions.startComplexFetch.type,
-        payload: {}
-      })
+        payload: {},
+      });
       await basicCtn.actions.setCancelledFields.dispatch({});
 
       expect(basicCtn.getState().loading).toBe(false);
       expect(JSON.stringify(basicCtn.getState().result)).toMatch("{}");
       expect(basicCtn.getState().errMsg).toBe(cancelStr);
-
-    })
-
+    });
   });
 
   describe("cancel thunk/observable example suite", () => {
-
     const cancelStr = "Sync Cancelled!";
-    const dummyObj = {data:"Success"};
-    const dummyApi = ()=> new Promise((res)=>{
-      setTimeout(()=>{
-        res(dummyObj);
-      }, 500);
-    })
+    const dummyObj = { data: "Success" };
+    const dummyApi = () =>
+      new Promise((res) => {
+        setTimeout(() => {
+          res(dummyObj);
+        }, 500);
+      });
 
     const basicModel = defaultModelBuilder
       .state(() => ({
@@ -520,45 +516,45 @@ describe("saga api demo purpose test cases", ()=>{
         },
         // i am super lazy to create another fake action
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        startComplexFetch(){}
+        startComplexFetch() {},
       })
       .effects({
-        setCancelledFields: async (ctx)=>{
+        setCancelledFields: async (ctx) => {
           const { actions } = ctx;
           await actions.setErrMsg.dispatch(cancelStr);
-        }
+        },
       })
       .epics([
-        ({rootAction$,actions}) => {
-          return rootAction$
-            .pipe(
-              ofType(actions.startComplexFetch.type),
-              tap(async (action)=>{
-                // Oops untyped, the same as saga take typeless by default euh?
-                expect(action.payload.something).toBeUndefined();
-                await actions.setLoading.dispatch(true);
-                return action;
-              }),
-              mergeMap(()=>{
-                dummyApi().then(res=>{
+        ({ rootAction$, actions }) => {
+          return rootAction$.pipe(
+            ofType(actions.startComplexFetch.type),
+            tap(async (action) => {
+              // Oops untyped, the same as saga take typeless by default euh?
+              expect(action.payload.something).toBeUndefined();
+              await actions.setLoading.dispatch(true);
+              return action;
+            }),
+            mergeMap(() => {
+              dummyApi()
+                .then((res) => {
                   return actions.setResult.dispatch(res);
-                }).then();
-                return empty()
-              }),
-              takeUntil(rootAction$.pipe(
-                ofType(actions.setCancelledFields.type)
-              )),
-              mergeMapTo(empty())
-            );
-        }
+                })
+                .then();
+              return empty();
+            }),
+            takeUntil(
+              rootAction$.pipe(ofType(actions.setCancelledFields.type))
+            ),
+            mergeMapTo(empty())
+          );
+        },
       ])
       .build();
 
-    it("do not cancel",async ()=>{
+    it("do not cancel", async () => {
+      jest.useFakeTimers();
 
-      jest.useFakeTimers()
-
-      const dependencies: Dependencies = {appName: 'cancel thunk/observable'};
+      const dependencies: Dependencies = { appName: "cancel thunk/observable" };
       const { getContainer, registerModels, gc, store } = init({
         dependencies,
         enableSaga: true,
@@ -569,21 +565,19 @@ describe("saga api demo purpose test cases", ()=>{
 
       store.dispatch({
         type: basicCtn.actions.startComplexFetch.type,
-        payload: {}
-      })
+        payload: {},
+      });
 
       jest.advanceTimersByTime(601);
-      await new Promise(resolve => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
 
       expect(basicCtn.getState().loading).toBe(false);
       expect(basicCtn.getState().result).toBe(dummyObj);
       expect(basicCtn.getState().errMsg).toBe("");
+    });
 
-    })
-
-    it("cancelled",async ()=>{
-
-      const dependencies: Dependencies = {appName: 'cancel thunk/observable'};
+    it("cancelled", async () => {
+      const dependencies: Dependencies = { appName: "cancel thunk/observable" };
       const { getContainer, registerModels, gc, store } = init({
         dependencies,
         enableSaga: true,
@@ -594,14 +588,13 @@ describe("saga api demo purpose test cases", ()=>{
 
       store.dispatch({
         type: basicCtn.actions.startComplexFetch.type,
-        payload: {}
-      })
+        payload: {},
+      });
       await basicCtn.actions.setCancelledFields.dispatch({});
 
       expect(basicCtn.getState().loading).toBe(false);
       expect(JSON.stringify(basicCtn.getState().result)).toMatch("{}");
       expect(basicCtn.getState().errMsg).toBe(cancelStr);
-
-    })
-  })
-})
+    });
+  });
+});

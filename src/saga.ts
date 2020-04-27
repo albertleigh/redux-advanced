@@ -18,9 +18,12 @@ import { StoreContext } from "./context";
 import { splitLastPart } from "./util";
 
 export type SGA<
-  P, D=any, S extends object = any, G extends Getters = any,
+  P,
+  D = any,
+  S extends object = any,
+  G extends Getters = any,
   A extends ActionHelpers = any
-  > = ActionWithFields<P, {context: SagaContext<D,S,G,A>}>
+> = ActionWithFields<P, { context: SagaContext<D, S, G, A> }>;
 
 export interface SagaContext<
   TDependencies = any,
@@ -48,13 +51,13 @@ export type SagaEffect<
   TActionHelpers extends ActionHelpers = any,
   TPayload = any,
   TResult = any
-> = (action: SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers>)
-     =>
-  Generator<
-    StrictEffect,
-    TResult,
-    SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers> | any[] | any
-  >
+> = (
+  action: SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers>
+) => Generator<
+  StrictEffect,
+  TResult,
+  SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers> | any[] | any
+>;
 
 export interface SagaEffects<
   TDependencies = any,
@@ -165,7 +168,7 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
           entrySagaEffects.push(oneSaga);
         }
       });
-      if (entrySagaEffects.length> 0) {
+      if (entrySagaEffects.length > 0) {
         yield spawn(
           _doSpawnEntries,
           newAction,

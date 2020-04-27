@@ -100,20 +100,23 @@ describe("saga api testes", () => {
     expect(basicCtn.getState().name).toBe("basicName_custom_latest_latest");
   });
 
-  it ('verify root registered payload', async ()=>{
+  it("verify root registered payload", async () => {
     let theAct: any;
     const basicModel = defaultModelBuilder
       .sagas({
         // eslint-disable-next-line require-yield
-        _$tkePayload: function* (action) {
+        _$tkePayload: function*(action) {
           theAct = action;
-        }
+        },
       })
       .sagas({
-        $$rootEntry: function* (action) {
+        $$rootEntry: function*(action) {
           const { actions } = action.context;
-          yield takeLatest(actions._$tkePayload.type, actions._$tkePayload.saga);
-        }
+          yield takeLatest(
+            actions._$tkePayload.type,
+            actions._$tkePayload.saga
+          );
+        },
       })
       .build();
 
@@ -127,32 +130,32 @@ describe("saga api testes", () => {
     registerModels({ basicModel });
     const basicCtn = getContainer(basicModel);
 
-    await basicCtn.actions._$tkePayload.dispatch({innerTyp:"_$tkePayload"});
+    await basicCtn.actions._$tkePayload.dispatch({ innerTyp: "_$tkePayload" });
 
-    expect(theAct['context']).toBeDefined();
-    expect(theAct.payload['context']).toBeUndefined();
+    expect(theAct["context"]).toBeDefined();
+    expect(theAct.payload["context"]).toBeUndefined();
+  });
 
-  })
+  it("verify dispatch response", async () => {
+    const obj = { data: "success" };
 
-  it ('verify dispatch response', async ()=>{
-    const obj = { data: "success"};
-
-    const dummyFetch = ()=> new Promise((res)=>{
-      setTimeout(()=>{
-        res(obj)
-      }, 500);
-    })
+    const dummyFetch = () =>
+      new Promise((res) => {
+        setTimeout(() => {
+          res(obj);
+        }, 500);
+      });
 
     const basicModel = defaultModelBuilder
-        .sagas({
-          fetchEffect: function* () {
-            return yield call(dummyFetch);
-          },
-          _$privateFetchEffect: function* () {
-            return yield call(dummyFetch);
-          }
-        })
-        .build();
+      .sagas({
+        fetchEffect: function*() {
+          return yield call(dummyFetch);
+        },
+        _$privateFetchEffect: function*() {
+          return yield call(dummyFetch);
+        },
+      })
+      .build();
 
     const dependencies: Dependencies = { appId: 2 };
 
@@ -164,55 +167,57 @@ describe("saga api testes", () => {
     registerModels({ basicModel });
     const basicCtn = getContainer(basicModel);
 
-    let res = await basicCtn.actions.fetchEffect.dispatch({innerTyp: "_$tkePayload"});
+    let res = await basicCtn.actions.fetchEffect.dispatch({
+      innerTyp: "_$tkePayload",
+    });
 
     expect(res).toBe(obj);
 
-    res = await basicCtn.actions._$privateFetchEffect.dispatch({innerTyp: "_$tkePayload"});
+    res = await basicCtn.actions._$privateFetchEffect.dispatch({
+      innerTyp: "_$tkePayload",
+    });
 
     expect(JSON.stringify(res)).toBe("{}");
+  });
 
-  })
-
-  it('verify result typ',async ()=>{
+  it("verify result typ", async () => {
     const basicModel = defaultModelBuilder
       .sagas({
-        task01:function*() {
+        task01: function*() {
           const millsToDelay = 218;
           yield delay(millsToDelay);
           return {
-            typ: 'task01',
+            typ: "task01",
             millsToDelay,
-          }
+          };
         },
-        task02:function*(action: SGA<{
-          extraField: string;
-        }>) {
+        task02: function*(
+          action: SGA<{
+            extraField: string;
+          }>
+        ) {
           const py = action.payload;
           const millsToDelay = 220;
           yield delay(millsToDelay);
           return {
-            typ: 'task02',
+            typ: "task02",
             millsToDelay,
-            extra: py.extraField
-
-          }
+            extra: py.extraField,
+          };
         },
       })
-    .sagas({
-      task04:function* (action){
-        const { actions } = action.context;
+      .sagas({
+        task04: function*(action) {
+          const { actions } = action.context;
 
-        // typed err
-        // yield* actions.task02.saga({ext: "ext"})
-        // typed err
-        // yield* actions.task03.saga({ext: "ext"})
-        yield* actions.task02.saga({extraField: "ext"})
-
-      }
-
-    })
-    .build();
+          // typed err
+          // yield* actions.task02.saga({ext: "ext"})
+          // typed err
+          // yield* actions.task03.saga({ext: "ext"})
+          yield* actions.task02.saga({ extraField: "ext" });
+        },
+      })
+      .build();
 
     const dependencies: Dependencies = { appId: 3 };
 
@@ -229,14 +234,14 @@ describe("saga api testes", () => {
     expect(res1.typ).toBeDefined();
     expect(res1.millsToDelay).toBeDefined();
 
-    const res2 = await basicCtn.actions.task02.dispatch({extraField: 'extPlFd'});
+    const res2 = await basicCtn.actions.task02.dispatch({
+      extraField: "extPlFd",
+    });
 
     expect(res2.typ).toBeDefined();
     // type err
     // expect(res2.typ2).toBeDefined();
     expect(res2.millsToDelay).toBeDefined();
     expect(res2.extra).toBeDefined();
-
-  })
-
+  });
 });

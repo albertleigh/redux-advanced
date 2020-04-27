@@ -294,12 +294,12 @@ export class ModelBuilder<
           const newSagaEffect: SagaEffect = function*(action) {
             return yield* oldSaga({
               ...action,
-              context:{
+              context: {
                 ...action.context,
                 getState: () => action.context.getState()?.[subKey],
                 getters: action.context.getters[subKey],
                 actions: action.context.actions[subKey],
-              }
+              },
             });
           };
           return newSagaEffect;

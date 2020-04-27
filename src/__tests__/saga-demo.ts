@@ -160,6 +160,60 @@ describe("saga api demo purpose test cases", ()=>{
 
   })
 
+  // hybrid example
+  it("hybrid example", async()=>{
+
+    const someFun = jest.fn().mockImplementation((str: string)=>{
+      console.log("[mocked::someFun]",str);
+    })
+
+    const dependencies: Dependencies = { appName: "hybrid" };
+
+    const basicModel = defaultModelBuilder
+      .effects({
+        thunkTask: async (ctx, payload: {py: string})=>{
+          return await new Promise<{result: string}>((res)=>{
+            setTimeout(()=>{res({ result: "thunk task cleared" })}, 100);
+          })
+        }
+
+      })
+      .sagas({
+        sagaTask: function*(action) {
+          const { actions } = action.context;
+
+          // the payload of thunk effect would be typed
+          // uncomment to check the type err
+          // typed err
+          // yield call(actions.thunkTask.dispatch, {py2: "py str"});
+
+          yield call(actions.thunkTask.dispatch, {py: "py str"});
+        }
+      })
+      .build();
+
+    // by default saga effects are not enabled, thus init gonna need an
+    // enableSaga opt to be true to init saga middleware
+    const { getContainer, registerModels, gc } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({ basicModel });
+    const basicCtn = getContainer(basicModel);
+
+    // still we can dispatch saga effect like thunk effect before
+    await basicCtn.actions.sagaTask.dispatch({})
+
+    // function called, console logged to and the effect mission cleared
+    expect(someFun).toBeCalled();
+
+    // by default, all un specific effect names will be `takeEvery`ed as it
+    // would usually be the most common use cases
+
+  })
+
+
   // unregistered example
 
   // another key concern of redux-advanced is implying typing, new saga

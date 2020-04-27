@@ -374,7 +374,8 @@ describe("saga api demo purpose test cases", ()=>{
   })
 
   // let's have one cancel example for fun
-  it ("cancel example", async ()=> {
+
+  describe("cancel example suite", () => {
 
     const cancelStr = "Sync Cancelled!";
     const dummyObj = {data:"Success"};
@@ -430,26 +431,58 @@ describe("saga api demo purpose test cases", ()=>{
       })
       .build();
 
-    const dependencies: Dependencies = {appName: 'cancel'};
+    it ("do not cancel", async ()=> {
+      jest.useFakeTimers();
 
-    const { getContainer, registerModels, gc, store } = init({
-      dependencies,
-      enableSaga: true,
-    });
+      const dependencies: Dependencies = {appName: 'donot cancel'};
 
-    registerModels({ basicModel });
+      const { getContainer, registerModels, gc, store } = init({
+        dependencies,
+        enableSaga: true,
+      });
 
-    const basicCtn = getContainer(basicModel);
+      registerModels({ basicModel });
 
-    store.dispatch({
-      type: basicCtn.actions.startComplexFetch.type,
-      payload: {}
+      const basicCtn = getContainer(basicModel);
+
+      store.dispatch({
+        type: basicCtn.actions.startComplexFetch.type,
+        payload: {}
+      })
+
+      jest.advanceTimersByTime(600);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(basicCtn.getState().loading).toBe(false);
+      expect(basicCtn.getState().result).toBe(dummyObj);
+      expect(basicCtn.getState().errMsg).toBe("");
+
     })
-    await basicCtn.actions.setCancelledFields.dispatch({});
 
-    expect(basicCtn.getState().loading).toBe(false);
-    expect(JSON.stringify(basicCtn.getState().result)).toMatch("{}");
-    expect(basicCtn.getState().errMsg).toBe(cancelStr);
+    it ("cancelled", async ()=> {
 
-  })
+      const dependencies: Dependencies = {appName: 'cancelled'};
+
+      const { getContainer, registerModels, gc, store } = init({
+        dependencies,
+        enableSaga: true,
+      });
+
+      registerModels({ basicModel });
+
+      const basicCtn = getContainer(basicModel);
+
+      store.dispatch({
+        type: basicCtn.actions.startComplexFetch.type,
+        payload: {}
+      })
+      await basicCtn.actions.setCancelledFields.dispatch({});
+
+      expect(basicCtn.getState().loading).toBe(false);
+      expect(JSON.stringify(basicCtn.getState().result)).toMatch("{}");
+      expect(basicCtn.getState().errMsg).toBe(cancelStr);
+
+    })
+
+  });
 })

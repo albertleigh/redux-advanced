@@ -1,5 +1,5 @@
 import { createModelBuilder, init, SGA } from "../index";
-import { apply, delay, put, take, takeLatest } from "redux-saga/effects";
+import { apply, call, cancel, cancelled, delay, fork, put, putResolve, take, takeLatest } from "redux-saga/effects";
 
 interface Dependencies {
   appName: string;
@@ -370,6 +370,86 @@ describe("saga api demo purpose test cases", ()=>{
     // expect(res2.typ2).toBeDefined();
     expect(res2.millsToDelay).toBeDefined();
     expect(res2.extra).toBeDefined();
+
+  })
+
+  // let's have one cancel example for fun
+  it ("cancel example", async ()=> {
+
+    const cancelStr = "Sync Cancelled!";
+    const dummyObj = {data:"Success"};
+    const dummyApi = ()=> new Promise((res)=>{
+      setTimeout(()=>{
+        res(dummyObj);
+      }, 500);
+    })
+
+    const basicModel = defaultModelBuilder
+      .state(() => ({
+        loading: false,
+        result: {} as any,
+        errMsg: "",
+      }))
+      .reducers({
+        setLoading(state, payload: boolean) {
+          state.loading = payload;
+        },
+        setResult(state, payload: any) {
+          state.result = payload;
+          state.loading = false;
+        },
+        setErrMsg(state, msg: string) {
+          state.errMsg = msg;
+          state.loading = false;
+        },
+        // i am super lazy to create another fake action
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        setCancelledFields(){}
+      })
+      .sagas({
+        _$bgSync: function*(action) {
+          const { actions } = action.context;
+          try {
+            yield putResolve(actions.setLoading.create(true));
+            const res = yield call(dummyApi);
+            yield putResolve(actions.setResult.create(res));
+          } finally {
+            if (yield cancelled())
+              yield put(actions.setErrMsg.create(cancelStr))
+          }
+        }
+      })
+      .sagas({
+        // usually, throttling is need, but for simplicity takeEvery is good enough for demo
+        startComplexFetch: function*(action) {
+          const {actions} = action.context;
+          const bgSyncTask = yield fork(actions._$bgSync.saga, {})
+          yield take(actions.setCancelledFields.type);
+          yield cancel(bgSyncTask);
+        }
+      })
+      .build();
+
+    const dependencies: Dependencies = {appName: 'cancel'};
+
+    const { getContainer, registerModels, gc, store } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({ basicModel });
+
+    const basicCtn = getContainer(basicModel);
+
+    store.dispatch({
+      type: basicCtn.actions.startComplexFetch.type,
+      payload: {}
+    })
+    await basicCtn.actions.setCancelledFields.dispatch({});
+
+    expect(basicCtn.getState().loading).toBe(false);
+    expect(JSON.stringify(basicCtn.getState().result)).toMatch("{}");
+    expect(basicCtn.getState().errMsg).toBe(cancelStr);
 
   })
 })

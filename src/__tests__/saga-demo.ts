@@ -227,6 +227,64 @@ describe("saga api demo purpose test cases", ()=>{
 
 
   // unregistered example
+  it("unregistered example", async ()=>{
+
+    const FAKE_ACT_NAME = "FAKE_ACT_NAME";
+    const fakeActCreator = ()=> ({
+      type: FAKE_ACT_NAME,
+      payload: {}
+    })
+
+    let oneSagaTaskCtn = 0;
+
+    const staticModel = defaultModelBuilder
+      .build();
+    const dynamicModel = defaultModelBuilder
+      .sagas({
+        _$oneSagaTask: function*() {
+          oneSagaTaskCtn++;
+          yield delay(100);
+        }
+
+      })
+      .sagas({
+        $$rootEntry: function*(action) {
+          const {actions} = action.context;
+          yield takeLatest(FAKE_ACT_NAME, actions._$oneSagaTask.saga);
+        }
+      })
+      .build();
+
+    const dependencies: Dependencies = {appName: 'unregistered'}
+
+    const { getContainer, registerModels, gc, store } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({
+      stat: staticModel,
+      dyn: [dynamicModel]
+    });
+
+    const dynCtn = getContainer(dynamicModel, "1");
+
+    // dynamic model not registered yet, won't trigger the saga
+    store.dispatch(fakeActCreator());
+    expect(oneSagaTaskCtn).toBe(0);
+
+    dynCtn.register();
+
+    // dynamic model registered yet, will trigger the saga
+    store.dispatch(fakeActCreator());
+    expect(oneSagaTaskCtn).toBe(1);
+
+    dynCtn.unregister();
+
+    // dynamic model unregistered yet, won't trigger the saga
+    store.dispatch(fakeActCreator());
+    expect(oneSagaTaskCtn).toBe(1);
+  })
 
   // another key concern of redux-advanced is implying typing, new saga
   // effect group also keep those in minds, at least will bear all the
@@ -280,7 +338,6 @@ describe("saga api demo purpose test cases", ()=>{
           expect(res.typ).toBeDefined();
           expect(res.millsToDelay).toBeDefined();
           expect(res.extra).toBeDefined();
-
 
         }
 

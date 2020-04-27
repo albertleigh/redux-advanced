@@ -185,28 +185,33 @@ describe("saga api testes", () => {
             millsToDelay,
           }
         },
-        task02:function*() {
-          const millsToDelay = 219;
-          yield delay(millsToDelay);
-          return {
-            typ: 'task01',
-            millsToDelay,
-          }
-        },
-        task03:function*(action: SGA<{
+        task02:function*(action: SGA<{
           extraField: string;
         }>) {
           const py = action.payload;
           const millsToDelay = 220;
           yield delay(millsToDelay);
           return {
-            typ: 'task01',
+            typ: 'task02',
             millsToDelay,
             extra: py.extraField
 
           }
         },
       })
+    .sagas({
+      task04:function* (action){
+        const { actions } = action.context;
+
+        // typed err
+        // yield* actions.task02.saga({ext: "ext"})
+        // typed err
+        // yield* actions.task03.saga({ext: "ext"})
+        yield* actions.task02.saga({extraField: "ext"})
+
+      }
+
+    })
     .build();
 
     const dependencies: Dependencies = { appId: 3 };
@@ -224,11 +229,13 @@ describe("saga api testes", () => {
     expect(res1.typ).toBeDefined();
     expect(res1.millsToDelay).toBeDefined();
 
-    const res3 = await basicCtn.actions.task03.dispatch({extraField: 'extPlFd'});
+    const res2 = await basicCtn.actions.task02.dispatch({extraField: 'extPlFd'});
 
-    expect(res3.typ).toBeDefined();
-    expect(res3.millsToDelay).toBeDefined();
-    expect(res3.extra).toBeDefined();
+    expect(res2.typ).toBeDefined();
+    // type err
+    // expect(res2.typ2).toBeDefined();
+    expect(res2.millsToDelay).toBeDefined();
+    expect(res2.extra).toBeDefined();
 
   })
 

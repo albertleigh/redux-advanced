@@ -1,5 +1,5 @@
 import { createModelBuilder, init, SGA } from "../index";
-import { call, delay, put, take, takeLatest } from "redux-saga/effects";
+import { apply, delay, put, take, takeLatest } from "redux-saga/effects";
 
 interface Dependencies {
   appName: string;
@@ -173,7 +173,10 @@ describe("saga api demo purpose test cases", ()=>{
       .effects({
         thunkTask: async (ctx, payload: {py: string})=>{
           return await new Promise<{result: string}>((res)=>{
-            setTimeout(()=>{res({ result: "thunk task cleared" })}, 100);
+            setTimeout(()=>{
+              someFun(payload.py);
+              res({ result: "thunk task cleared" })
+            }, 100);
           })
         }
 
@@ -185,9 +188,12 @@ describe("saga api demo purpose test cases", ()=>{
           // the payload of thunk effect would be typed
           // uncomment to check the type err
           // typed err
-          // yield call(actions.thunkTask.dispatch, {py2: "py str"});
+          // yield apply(actions.thunkTask, "dispatch", [{py2: "py str"}]);
 
-          yield call(actions.thunkTask.dispatch, {py: "py str"});
+          // since actions is an class with class context, better use apply to
+          // keep the context
+          yield apply(actions.thunkTask, "dispatch", [{py: "py str"}]);
+
         }
       })
       .build();

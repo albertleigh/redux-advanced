@@ -1,4 +1,4 @@
-import { createModelBuilder, init, SGA } from "../index";
+import { createModelBuilder, init } from "../index";
 import {
   apply,
   call,

@@ -1,4 +1,4 @@
-import { createModelBuilder, init, SGA } from "../index";
+import { createModelBuilder, init } from "../index";
 import { call, delay, put, take, takeLatest } from "redux-saga/effects";
 
 interface Dependencies {

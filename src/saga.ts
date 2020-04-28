@@ -16,7 +16,7 @@ import { Model } from "./model";
 import { StoreContext } from "./context";
 import { splitLastPart } from "./util";
 
-export type SGA< P=any > = Action<P>
+export type SagaAction< P=any > = Action<P>
 
 export interface SagaContext<
   TDependencies = any,
@@ -50,7 +50,7 @@ export type SagaEffect<
 ) => Generator<
   StrictEffect,
   TResult,
-  SGA<TPayload> | any[] | any
+  SagaAction<TPayload> | any[] | any
 >;
 
 export interface SagaEffects<
@@ -188,7 +188,7 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
             if (actionName.match(/.*[$_]\$.*/g)) {
               deferred?.resolve({});
             } else {
-              const newAction = {} as SGA<
+              const newAction = {} as SagaAction<
                 typeof action.payload
               >;
               newAction.type = action.type;

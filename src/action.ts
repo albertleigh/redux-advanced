@@ -91,7 +91,7 @@ export type ExtractActionHelpers<
   TEffects extends Effects,
   TSagas extends SagaEffects
 > = ExtractActionHelpersFromPayloadResultPairs<
-    ExtractActionHelperPayloadResultPairs<TReducers> &
+  ExtractActionHelperPayloadResultPairs<TReducers> &
     ExtractActionHelperPayloadResultPairs<TEffects> &
     ExtractActionHelperPayloadResultPairs<TSagas>
 >;
@@ -162,12 +162,12 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
       .get(this._container.model)
       ?.sagaEffectByActionName.get(actionName);
     if (!!theSaga) {
-      return function*(input: TPayload| Action<TPayload>) {
+      return function*(input: TPayload | Action<TPayload>) {
         let payload: TPayload;
         if (!!(input as any).type) {
           // input is action from saga
           payload = (input as any).payload;
-        }else {
+        } else {
           // input is payload from custom
           payload = input as TPayload;
         }

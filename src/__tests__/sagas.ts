@@ -106,7 +106,7 @@ describe("saga api testes", () => {
     const basicModel = defaultModelBuilder
       .sagas({
         // eslint-disable-next-line require-yield
-        _$tkePayload: function*(ctx,pl) {
+        _$tkePayload: function*(ctx, pl) {
           theCtx = ctx;
           thePl = pl;
         },
@@ -185,7 +185,7 @@ describe("saga api testes", () => {
   it("verify result typ", async () => {
     const basicModel = defaultModelBuilder
       .state({
-        dummyStr: 'dummyStr'
+        dummyStr: "dummyStr",
       })
       .sagas({
         task01: function*() {
@@ -202,7 +202,7 @@ describe("saga api testes", () => {
             extraField: string;
           }
         ) {
-          const {getState} = ctx;
+          const { getState } = ctx;
           expect(getState().dummyStr).toBeDefined();
           const millsToDelay = 220;
           yield delay(millsToDelay);

@@ -16,7 +16,7 @@ import { Model } from "./model";
 import { StoreContext } from "./context";
 import { splitLastPart } from "./util";
 
-export type SagaAction< P=any > = Action<P>
+export type SagaAction<P = any> = Action<P>;
 
 export interface SagaContext<
   TDependencies = any,
@@ -47,11 +47,7 @@ export type SagaEffect<
 > = (
   ctx: SagaContext<TDependencies, TState, TGetters, TActionHelpers>,
   pl: TPayload
-) => Generator<
-  StrictEffect,
-  TResult,
-  SagaAction<TPayload> | any[] | any
->;
+) => Generator<StrictEffect, TResult, SagaAction<TPayload> | any[] | any>;
 
 export interface SagaEffects<
   TDependencies = any,
@@ -188,13 +184,14 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
             if (actionName.match(/.*[$_]\$.*/g)) {
               deferred?.resolve({});
             } else {
-              const newAction = {} as SagaAction<
-                typeof action.payload
-              >;
+              const newAction = {} as SagaAction<typeof action.payload>;
               newAction.type = action.type;
               newAction.payload = action.payload;
               try {
-                const result = yield* theSaga(container.sagaContext, newAction.payload);
+                const result = yield* theSaga(
+                  container.sagaContext,
+                  newAction.payload
+                );
                 deferred?.resolve(result);
               } catch (e) {
                 deferred?.reject(e);

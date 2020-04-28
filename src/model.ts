@@ -291,16 +291,19 @@ export class ModelBuilder<
 
       sagas = {
         [subKey]: assignObjectDeeply({}, model.sagas, (oldSaga: SagaEffect) => {
-          const newSagaEffect: SagaEffect = function*(action) {
-            return yield* oldSaga({
-              ...action,
-              context: {
-                ...action.context,
-                getState: () => action.context.getState()?.[subKey],
-                getters: action.context.getters[subKey],
-                actions: action.context.actions[subKey],
+          const newSagaEffect: SagaEffect = function*(context,action) {
+            return yield* oldSaga(
+              {
+                ...context,
+                getState: () => context.getState()?.[subKey],
+                getters: context.getters[subKey],
+                actions: context.actions[subKey],
               },
-            });
+              {
+                type: action.type,
+                payload: action.payload,
+              }
+            );
           };
           return newSagaEffect;
         }),

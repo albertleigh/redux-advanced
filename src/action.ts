@@ -29,9 +29,6 @@ export interface Action<TPayload = any> {
   payload: TPayload;
 }
 
-export type ActionWithFields<TPayload, TFieldsObj> = Action<TPayload> &
-  TFieldsObj;
-
 export interface ActionHelper<TPayload = any, TResult = any> {
   type: string;
   is(action: any): action is Action<TPayload>;
@@ -94,7 +91,7 @@ export type ExtractActionHelpers<
   TEffects extends Effects,
   TSagas extends SagaEffects
 > = ExtractActionHelpersFromPayloadResultPairs<
-  ExtractActionHelperPayloadResultPairs<TReducers> &
+    ExtractActionHelperPayloadResultPairs<TReducers> &
     ExtractActionHelperPayloadResultPairs<TEffects> &
     ExtractActionHelperPayloadResultPairs<TSagas>
 >;
@@ -112,24 +109,10 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
   }
 
   public create(payload: TPayload): Action<TPayload> {
-    const action = {
+    return {
       type: this.type,
       payload,
     };
-    // todo move ctx to this.create
-    const [, actionName] = splitLastPart(this.type);
-    if (
-      this._storeContext &&
-      this._storeContext.contextByModel
-        .get(this._container.model)
-        ?.sagaEffectByActionName.has(actionName)
-    ) {
-      (action as ActionWithFields<
-        TPayload,
-        { context: SagaContext }
-      >).context = this._container.sagaContext;
-    }
-    return action;
   }
 
   public dispatch(payload: TPayload): Promise<TResult> {
@@ -180,19 +163,8 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
       ?.sagaEffectByActionName.get(actionName);
     if (!!theSaga) {
       return function*(payload: TPayload) {
-        let arg;
-        if (!!(payload as any)["context"]) {
-          arg = self.create((payload as any).payload) as ActionWithFields<
-            TPayload,
-            { context: SagaContext }
-          >;
-        } else {
-          arg = self.create(payload) as ActionWithFields<
-            TPayload,
-            { context: SagaContext }
-          >;
-        }
-        return yield* theSaga(arg);
+        const act = self.create(payload);
+        return yield* theSaga(self._container.sagaContext,act);
       };
     } else {
       // cheap compatible solution, should be avoided via call(action.dispatch, {})

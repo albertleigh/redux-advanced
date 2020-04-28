@@ -5,7 +5,6 @@ import {
   actionTypes,
   Action,
   ActionHelpers,
-  ActionWithFields,
   AnyAction,
   ExtractActionDispatchResult,
   ExtractActionPayload,
@@ -17,13 +16,7 @@ import { Model } from "./model";
 import { StoreContext } from "./context";
 import { splitLastPart } from "./util";
 
-export type SGA<
-  P,
-  D = any,
-  S extends object = any,
-  G extends Getters = any,
-  A extends ActionHelpers = any
-> = ActionWithFields<P, { context: SagaContext<D, S, G, A> }>;
+export type SGA< P=any > = Action<P>
 
 export interface SagaContext<
   TDependencies = any,
@@ -52,11 +45,12 @@ export type SagaEffect<
   TPayload = any,
   TResult = any
 > = (
-  action: SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers>
+  ctx: SagaContext<TDependencies, TState, TGetters, TActionHelpers>,
+  act: SGA<TPayload>
 ) => Generator<
   StrictEffect,
   TResult,
-  SGA<TPayload, TDependencies, TState, TGetters, TActionHelpers> | any[] | any
+  SGA<TPayload> | any[] | any
 >;
 
 export interface SagaEffects<
@@ -117,13 +111,14 @@ export type LooseSagaEffects<TSagaEffects> = {
 
 export function rootSagaBuilder(storeCtx: StoreContext) {
   function* _doSpawnEntries(
-    action: AnyAction,
+    context: SagaContext,
+    action: Action,
     entrySagaEffects: SagaEffect[],
     baseNamespace: string,
     key?: string
   ) {
     const allTasks = yield all(
-      entrySagaEffects.map((saga) => fork(saga as any, action))
+      entrySagaEffects.map((saga) => fork(saga as any, context, action))
     );
 
     while (true) {
@@ -157,11 +152,6 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
       const model = models[modelIndex ?? 0];
       const modelCtx = storeCtx.contextByModel.get(model);
       const container = storeCtx.getContainer(model, key!) as ContainerImpl;
-      const newAction = action as ActionWithFields<
-        any,
-        { context: typeof container.sagaContext }
-      >;
-      newAction.context = container.sagaContext;
       const entrySagaEffects: SagaEffect[] = [];
       modelCtx!.sagaEffectByActionName.forEach((oneSaga, key) => {
         if (key.indexOf("$$") !== -1) {
@@ -171,7 +161,8 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
       if (entrySagaEffects.length > 0) {
         yield spawn(
           _doSpawnEntries,
-          newAction,
+          container.sagaContext,
+          action,
           entrySagaEffects,
           baseNamespace,
           key
@@ -197,14 +188,13 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
             if (actionName.match(/.*[$_]\$.*/g)) {
               deferred?.resolve({});
             } else {
-              const newAction = {} as ActionWithFields<
-                typeof action.payload,
-                { context: typeof container.sagaContext }
+              const newAction = {} as SGA<
+                typeof action.payload
               >;
+              newAction.type = action.type;
               newAction.payload = action.payload;
-              newAction.context = container.sagaContext;
               try {
-                const result = yield* theSaga(newAction);
+                const result = yield* theSaga(container.sagaContext, newAction);
                 deferred?.resolve(result);
               } catch (e) {
                 deferred?.reject(e);

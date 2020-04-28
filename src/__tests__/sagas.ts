@@ -33,25 +33,25 @@ describe("saga api testes", () => {
         },
       })
       .sagas({
-        changeAll: function*(action) {
-          const { actions } = action.context;
+        changeAll: function*(ctx, action) {
+          const { actions } = ctx;
           yield put(actions.setName.create("basicName"));
           yield put(actions.setAge.create(1));
         },
-        _$customChange: function*(action) {
-          const { actions, getState } = action.context;
+        _$customChange: function*(ctx, action) {
+          const { actions, getState } = ctx;
           yield put(actions.setName.create(getState().name + "_custom"));
           yield put(actions.setAge.create(getState().age + 1));
         },
-        _$tkeLatestChange: function*(action) {
-          const { actions, getState } = action.context;
+        _$tkeLatestChange: function*(ctx, action) {
+          const { actions, getState } = ctx;
           yield put(actions.setName.create(getState().name + "_latest"));
           yield put(actions.setAge.create(getState().age + 2));
         },
       })
       .sagas({
-        $$rootRoot: function*(action) {
-          const { actions } = action.context;
+        $$rootRoot: function*(ctx, action) {
+          const { actions } = ctx;
           yield takeLatest(
             actions._$tkeLatestChange.type,
             actions._$tkeLatestChange.saga
@@ -110,8 +110,8 @@ describe("saga api testes", () => {
         },
       })
       .sagas({
-        $$rootEntry: function*(action) {
-          const { actions } = action.context;
+        $$rootEntry: function*(ctx, ction) {
+          const { actions } = ctx;
           yield takeLatest(
             actions._$tkePayload.type,
             actions._$tkePayload.saga
@@ -182,6 +182,9 @@ describe("saga api testes", () => {
 
   it("verify result typ", async () => {
     const basicModel = defaultModelBuilder
+      .state({
+        dummyStr: 'dummyStr'
+      })
       .sagas({
         task01: function*() {
           const millsToDelay = 218;
@@ -192,10 +195,13 @@ describe("saga api testes", () => {
           };
         },
         task02: function*(
+          ctx,
           action: SGA<{
             extraField: string;
           }>
         ) {
+          const {getState} = ctx;
+          expect(getState().dummyStr).toBeDefined();
           const py = action.payload;
           const millsToDelay = 220;
           yield delay(millsToDelay);
@@ -207,8 +213,8 @@ describe("saga api testes", () => {
         },
       })
       .sagas({
-        task04: function*(action) {
-          const { actions } = action.context;
+        task04: function*(ctx) {
+          const { actions } = ctx;
 
           // typed err
           // yield* actions.task02.saga({ext: "ext"})

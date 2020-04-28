@@ -101,16 +101,18 @@ describe("saga api testes", () => {
   });
 
   it("verify root registered payload", async () => {
-    let theAct: any;
+    let theCtx: any;
+    let thePl: any;
     const basicModel = defaultModelBuilder
       .sagas({
         // eslint-disable-next-line require-yield
-        _$tkePayload: function*(action) {
-          theAct = action;
+        _$tkePayload: function*(ctx,pl) {
+          theCtx = ctx;
+          thePl = pl;
         },
       })
       .sagas({
-        $$rootEntry: function*(ctx, ction) {
+        $$rootEntry: function*(ctx, pl) {
           const { actions } = ctx;
           yield takeLatest(
             actions._$tkePayload.type,
@@ -132,8 +134,8 @@ describe("saga api testes", () => {
 
     await basicCtn.actions._$tkePayload.dispatch({ innerTyp: "_$tkePayload" });
 
-    expect(theAct["context"]).toBeDefined();
-    expect(theAct.payload["context"]).toBeUndefined();
+    expect(theCtx).toBeDefined();
+    expect(thePl.innerTyp).toMatch("_$tkePayload");
   });
 
   it("verify dispatch response", async () => {
@@ -196,19 +198,18 @@ describe("saga api testes", () => {
         },
         task02: function*(
           ctx,
-          action: SGA<{
+          pl: {
             extraField: string;
-          }>
+          }
         ) {
           const {getState} = ctx;
           expect(getState().dummyStr).toBeDefined();
-          const py = action.payload;
           const millsToDelay = 220;
           yield delay(millsToDelay);
           return {
             typ: "task02",
             millsToDelay,
-            extra: py.extraField,
+            extra: pl.extraField,
           };
         },
       })

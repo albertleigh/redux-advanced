@@ -46,7 +46,7 @@ export type SagaEffect<
   TResult = any
 > = (
   ctx: SagaContext<TDependencies, TState, TGetters, TActionHelpers>,
-  act: SGA<TPayload>
+  pl: TPayload
 ) => Generator<
   StrictEffect,
   TResult,
@@ -118,7 +118,7 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
     key?: string
   ) {
     const allTasks = yield all(
-      entrySagaEffects.map((saga) => fork(saga as any, context, action))
+      entrySagaEffects.map((saga) => fork(saga as any, context, action.payload))
     );
 
     while (true) {
@@ -194,7 +194,7 @@ export function rootSagaBuilder(storeCtx: StoreContext) {
               newAction.type = action.type;
               newAction.payload = action.payload;
               try {
-                const result = yield* theSaga(container.sagaContext, newAction);
+                const result = yield* theSaga(container.sagaContext, newAction.payload);
                 deferred?.resolve(result);
               } catch (e) {
                 deferred?.reject(e);

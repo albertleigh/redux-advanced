@@ -103,25 +103,25 @@ describe("saga api demo purpose test cases", () => {
         },
       })
       .sagas({
-        changeAll: function*(action) {
-          const { actions } = action.context;
+        changeAll: function*(context) {
+          const { actions } = context;
           yield put(actions.setName.create("basicName"));
           yield put(actions.setAge.create(1));
         },
-        _$customChange: function*(action) {
-          const { actions, getState } = action.context;
+        _$customChange: function*(context) {
+          const { actions, getState } = context;
           yield put(actions.setName.create(getState().name + "_custom"));
           yield put(actions.setAge.create(getState().age + 1));
         },
-        _$tkeLatestChange: function*(action) {
-          const { actions, getState } = action.context;
+        _$tkeLatestChange: function*(context) {
+          const { actions, getState } = context;
           yield put(actions.setName.create(getState().name + "_latest"));
           yield put(actions.setAge.create(getState().age + 2));
         },
       })
       .sagas({
-        $$rootRoot: function*(action) {
-          const { actions } = action.context;
+        $$rootRoot: function*(context) {
+          const { actions } = context;
           yield takeLatest(
             actions._$tkeLatestChange.type,
             actions._$tkeLatestChange.saga
@@ -190,8 +190,8 @@ describe("saga api demo purpose test cases", () => {
         },
       })
       .sagas({
-        sagaTask: function*(action) {
-          const { actions } = action.context;
+        sagaTask: function*(context) {
+          const { actions } = context;
 
           // the payload of thunk effect would be typed
           // uncomment to check the type err
@@ -252,8 +252,8 @@ describe("saga api demo purpose test cases", () => {
         },
       })
       .sagas({
-        $$rootEntry: function*(action) {
-          const { actions } = action.context;
+        $$rootEntry: function*(context) {
+          const { actions } = context;
           yield takeLatest(FAKE_ACT_NAME, actions._$oneSagaTask.saga);
         },
       })
@@ -305,23 +305,23 @@ describe("saga api demo purpose test cases", () => {
           };
         },
         task02: function*(
-          action: SGA<{
+          context,
+          pl: {
             extraField: string;
-          }>
+          }
         ) {
-          const py = action.payload;
           const millsToDelay = 220;
           yield delay(millsToDelay);
           return {
             typ: "task02",
             millsToDelay,
-            extra: py.extraField,
+            extra: pl.extraField,
           };
         },
       })
       .sagas({
-        task04: function*(action) {
-          const { actions } = action.context;
+        task04: function*(context, payload) {
+          const { actions } = context;
 
           // the payload of saga generator would be typed
           // uncomment to check the type err
@@ -411,8 +411,8 @@ describe("saga api demo purpose test cases", () => {
         setCancelledFields() {},
       })
       .sagas({
-        _$bgSync: function*(action) {
-          const { actions } = action.context;
+        _$bgSync: function*(context) {
+          const { actions } = context;
           try {
             yield putResolve(actions.setLoading.create(true));
             const res = yield call(dummyApi);
@@ -425,8 +425,8 @@ describe("saga api demo purpose test cases", () => {
       })
       .sagas({
         // usually, throttling is need, but for simplicity takeEvery is good enough for demo
-        startComplexFetch: function*(action) {
-          const { actions } = action.context;
+        startComplexFetch: function*(context) {
+          const { actions } = context;
           const bgSyncTask = yield fork(actions._$bgSync.saga, {});
           yield take(actions.setCancelledFields.type);
           yield cancel(bgSyncTask);

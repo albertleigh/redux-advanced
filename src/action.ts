@@ -162,9 +162,16 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
       .get(this._container.model)
       ?.sagaEffectByActionName.get(actionName);
     if (!!theSaga) {
-      return function*(payload: TPayload) {
-        const act = self.create(payload);
-        return yield* theSaga(self._container.sagaContext,act);
+      return function*(input: TPayload| Action<TPayload>) {
+        let payload: TPayload;
+        if (!!(input as any).type) {
+          // input is action from saga
+          payload = (input as any).payload;
+        }else {
+          // input is payload from custom
+          payload = input as TPayload;
+        }
+        return yield* theSaga(self._container.sagaContext, payload);
       };
     } else {
       // cheap compatible solution, should be avoided via call(action.dispatch, {})

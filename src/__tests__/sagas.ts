@@ -251,4 +251,47 @@ describe("saga api testes", () => {
     expect(res2.millsToDelay).toBeDefined();
     expect(res2.extra).toBeDefined();
   });
+
+  it ('verify extend typ', async ()=>{
+
+    const fakeInnerFun = jest.fn();
+
+    function createSubModel() {
+      return defaultModelBuilder
+        .sagas({
+          _$:{
+            innerTask: function* (context, payload) {
+              fakeInnerFun();
+              yield delay(103);
+            }
+          }
+        })
+        .build();
+    }
+
+    const basicModel = defaultModelBuilder
+      .extend(createSubModel(),"sub")
+      .sagas({
+        outterTask: function* (context, payload) {
+          const {actions} = context;
+          yield* actions.sub._$.innerTask.saga({});
+        }
+      })
+      .build();
+
+    const dependencies: Dependencies = { appId: 4 };
+
+    const { getContainer, registerModels, gc } = init({
+      dependencies,
+      enableSaga: true,
+    });
+
+    registerModels({ basicModel });
+    const basicCtn = getContainer(basicModel);
+
+    await basicCtn.actions.outterTask.dispatch({});
+
+    expect(fakeInnerFun).toHaveBeenCalled();
+
+  })
 });

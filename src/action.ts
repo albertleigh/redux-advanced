@@ -164,7 +164,7 @@ export class ActionHelperImpl<TPayload = any, TResult = any>
     if (!!theSaga) {
       return function*(input: TPayload | Action<TPayload>) {
         let payload: TPayload;
-        if (!!(input as any).type) {
+        if (!!(input as any).type && !!(input as any).payload) {
           // input is action from saga
           payload = (input as any).payload;
         } else {

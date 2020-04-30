@@ -1,8 +1,9 @@
 .idea/
 
-/node_modules
-/dist
-/lib
+node_modules/
+dist/
+lib/
+coverage/
 
 /test/test.js
 /test/test.build.js

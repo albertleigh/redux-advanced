@@ -55,6 +55,7 @@
   "scripts": {
     "build": "rimraf dist lib && tsc -p . && rollup -c",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "prettify": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
     "release-beta": "npm run build && npm publish --tag beta --access public --dry-run",
     "release": "npm run build && npm publish --access public --dry-run"

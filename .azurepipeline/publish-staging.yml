@@ -1,0 +1,6 @@
+jobs:
+  - job: publish_staging_package
+    dependsOn: general_build_test
+    condition: succeeded()
+    steps:
+      - script: 'npm run release-beta'

@@ -24,17 +24,21 @@ jobs:
         npm run build
       displayName: 'npm run build'
     - task: CopyFiles@2
-      displayname: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+      displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
       inputs:
-          Contents: |
-            **/*
-            !coverage/**/*
-            !.azurepipeline/**/*
-            !.git/**/*
-          TargetFolder: $(Build.ArtifactStagingDirectory)
+        sourceFolder: $(Build.SourcesDirectory)
+        contents: |
+          **/*
+          !coverage/**/*
+          !.azurepipeline/**/*
+          !.git/**/*
+        targetFolder: $(Build.ArtifactStagingDirectory)
     - task: PublishbuildArtifacts@1
+      displayName: Publish artifacts
       inputs:
         pathtopublish: $(Build.ArtifactStagingDirectory)
         publishLocation: Container
+    - task: MicroBuildCleanup@1
+      displayName: Perform Cleanup Tasks
 
 

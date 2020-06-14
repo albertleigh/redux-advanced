@@ -16,9 +16,6 @@ jobs:
         npm run test:coverage
       displayName: 'npm run test'
     - script: |
-        npm run test:coverage
-      displayName: 'npm run test'
-    - script: |
         npm run build
       displayName: 'npm run build'
 

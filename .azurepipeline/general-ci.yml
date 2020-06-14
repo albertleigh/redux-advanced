@@ -1,2 +1,5 @@
+trigger:
+  - master
+  - develop
 jobs:
   - template: general-build-test.yml

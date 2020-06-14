@@ -1,8 +1,5 @@
 jobs:
   - job: build and test
-    trigger:
-    - master
-    - develop
     pool:
       vmImage: 'ubuntu-18.04'
     steps:
@@ -12,16 +9,16 @@ jobs:
       displayName: 'Install Node.js'
     - checkout: self
       clean: true
-    - scripts: |
+    - script: |
         npm ci
       displayName: 'npm install'
-    - scripts: |
+    - script: |
         npm run test:coverage
       displayName: 'npm run test'
-    - scripts: |
+    - script: |
         npm run test:coverage
       displayName: 'npm run test'
-    - scripts: |
+    - script: |
         npm run build
       displayName: 'npm run build'
 

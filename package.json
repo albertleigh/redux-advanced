@@ -53,7 +53,7 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
-    "build": "rimraf dist lib && tsc -p . && rollup -c",
+    "build": "rimraf dist coverage lib && tsc -p . && rollup -c",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "prettify": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",

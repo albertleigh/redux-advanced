@@ -1,0 +1,27 @@
+jobs:
+  - job: build and test
+    trigger:
+      - master
+      - develop
+      pool:
+        vmImage: 'ubuntu-18.04'
+      steps:
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '12.x'
+          displayName: 'Install Node.js'
+        - checkout: self
+          clean: true
+        - scripts: |
+            npm ci
+          displayName: 'npm install'
+        - scripts: |
+            npm run test:coverage
+          displayName: 'npm run test'
+        - scripts: |
+            npm run test:coverage
+          displayName: 'npm run test'
+        - scripts: |
+            npm run build
+          displayName: 'npm run build'
+

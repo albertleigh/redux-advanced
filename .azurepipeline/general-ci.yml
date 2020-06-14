@@ -1,0 +1,2 @@
+jobs:
+  - template: .general-build-test.yml

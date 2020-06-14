@@ -1,2 +1,2 @@
 jobs:
-  - template: .general-build-test.yml
+  - template: general-build-test.yml

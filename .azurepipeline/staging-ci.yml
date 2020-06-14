@@ -1,4 +1,0 @@
-trigger: none
-jobs:
-  - template: general-build-test.yml
-  - template: publish-staging.yml

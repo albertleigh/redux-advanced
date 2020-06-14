@@ -1,6 +1,16 @@
 jobs:
-  - job: publish_staging_package
+  - deployment: publish_staging_package
     dependsOn: general_build_test
     condition: succeeded()
     steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '12.x'
+        displayName: 'Install Node.js'
+      - checkout: self
+        clean: true
+      - script: |
+          npm ci
+        displayName: 'npm install'
       - script: 'npm run release-beta'
+        displayName: 'publish beta version'

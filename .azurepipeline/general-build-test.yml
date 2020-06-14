@@ -29,6 +29,7 @@ jobs:
         sourceFolder: $(Build.SourcesDirectory)
         contents: |
           **/*
+          !node_modules/**/*
           !coverage/**/*
           !.azurepipeline/**/*
           !.git/**/*

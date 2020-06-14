@@ -1,5 +1,5 @@
 jobs:
-  - job: build and test
+  - job: general_build_test
     pool:
       vmImage: 'ubuntu-18.04'
     steps:

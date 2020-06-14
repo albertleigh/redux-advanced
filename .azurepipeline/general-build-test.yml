@@ -39,3 +39,4 @@ jobs:
       inputs:
         pathtopublish: $(Build.ArtifactStagingDirectory)
         publishLocation: Container
+        artifactName: ws-linux

@@ -15,6 +15,11 @@ jobs:
     - script: |
         npm run test:coverage
       displayName: 'npm run test'
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: $(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml
+      displayName: 'publish codes coverages'
     - script: |
         npm run build
       displayName: 'npm run build'

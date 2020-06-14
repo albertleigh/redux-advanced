@@ -38,7 +38,3 @@ jobs:
       inputs:
         pathtopublish: $(Build.ArtifactStagingDirectory)
         publishLocation: Container
-    - task: MicroBuildCleanup@1
-      displayName: Perform Cleanup Tasks
-
-

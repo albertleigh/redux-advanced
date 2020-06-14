@@ -3,5 +3,9 @@ trigger:
     include:
     - master
     - develop
+    exclude:
+    - dependabot/*
+pr:
+- develop
 jobs:
   - template: general-build-test.yml

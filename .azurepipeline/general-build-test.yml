@@ -23,4 +23,18 @@ jobs:
     - script: |
         npm run build
       displayName: 'npm run build'
+    - task: CopyFiles@2
+      displayname: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+      inputs:
+          Contents: |
+            **/*
+            !coverage/**/*
+            !.azurepipeline/**/*
+            !.git/**/*
+          TargetFolder: $(Build.ArtifactStagingDirectory)
+    - task: PublishbuildArtifacts@1
+      inputs:
+        pathtopublish: $(Build.ArtifactStagingDirectory)
+        publishLocation: Container
+
 

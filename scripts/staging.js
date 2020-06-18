@@ -14,6 +14,7 @@ const isCi = !!process.env.CI;
 const OPTIONS = { cwd: BASE};
 
 const CUR_VER = pkgData.version;
+const STAGING_COMMENT = `Upgrade at ${new Date().toLocaleDateString()}`;
 
 if (isStagingVersion(CUR_VER)){
 
@@ -23,6 +24,6 @@ if (isStagingVersion(CUR_VER)){
 
   execSync("npm run build", OPTIONS);
   execSync(PUBLISH_CMD, OPTIONS);
-  execSync(`npm version ${NEXT_VERSION}`, OPTIONS);
+  execSync(`npm version ${NEXT_VERSION} -m "${STAGING_COMMENT}"`, OPTIONS);
 
 }

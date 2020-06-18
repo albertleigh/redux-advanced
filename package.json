@@ -1,6 +1,6 @@
 {
   "name": "@albertli90/redux-advanced",
-  "version": "1.1.0-beta.12",
+  "version": "1.1.0-beta.13",
   "description": "A state management library based on Redux",
   "authors": {
     "name": "Wentao Li",
@@ -59,6 +59,7 @@
     "test:coverage": "jest --coverage --coverageReporters=cobertura",
     "prettify": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
     "staging": "node ./scripts/staging.js",
+    "start-release": "node ./scripts/start-release.js",
     "release-beta": "npm run build && npm publish --tag beta --access public --dry-run",
     "release": "npm run build && npm publish --access public --dry-run"
   }

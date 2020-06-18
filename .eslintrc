@@ -12,6 +12,7 @@
     "@typescript-eslint/no-this-alias": "off"
   },
   "ignorePatterns": [
+    "scripts/**",
     "*.config.js"
   ]
 }

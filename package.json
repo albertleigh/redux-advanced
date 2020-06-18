@@ -38,6 +38,7 @@
     "@typescript-eslint/eslint-plugin": "^2.20.0",
     "@typescript-eslint/parser": "^2.20.0",
     "eslint": "^6.8.0",
+    "fs-extra": "^9.0.1",
     "immer": "^5.3.6",
     "jest": "^25.2.4",
     "prettier": "^1.19.1",
@@ -57,6 +58,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage --coverageReporters=cobertura",
     "prettify": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
+    "staging": "node ./scripts/staging.js",
     "release-beta": "npm run build && npm publish --tag beta --access public --dry-run",
     "release": "npm run build && npm publish --access public --dry-run"
   }

@@ -33,7 +33,6 @@ jobs:
           !node_modules/**/*
           !coverage/**/*
           !.azurepipeline/**/*
-          !.git/**/*
         targetFolder: $(Build.ArtifactStagingDirectory)
     - task: PublishbuildArtifacts@1
       displayName: Publish artifacts

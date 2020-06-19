@@ -27,8 +27,10 @@ if (isStagingVersion(CUR_VER)){
   execSync(PUBLISH_CMD, OPTIONS);
   execSync(`git tag -m "${STAGING_COMMENT_TAG}" v${CUR_VER}`, OPTIONS);
   isCi || execSync(`git push origin v${CUR_VER}`, OPTIONS);
+  execSync(`git status`, OPTIONS);
   execSync(`npm version ${NEXT_VERSION} --no-git-tag-version`, OPTIONS);
-  execSync(`git add --all`, OPTIONS);
+  execSync(`git add .`, OPTIONS);
+  execSync(`git status`, OPTIONS);
   execSync(`git commit -am "${STAGING_COMMENT_COMMIT}"`, OPTIONS);
   isCi || execSync(`git push origin develop`, OPTIONS);
   execSync(`git status`, OPTIONS);

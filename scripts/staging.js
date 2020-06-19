@@ -9,7 +9,7 @@ const {
 
 const BASE = path.resolve(__dirname, "../");
 const pkgData = JSON.parse(fse.readFileSync(path.resolve(BASE, "./package.json"), 'utf8'));
-const isCi = !!process.env.CI;
+const isCi = !!process.env.OTP_CODE;
 
 const OPTIONS = { cwd: BASE };
 
@@ -17,7 +17,7 @@ const CUR_VER = pkgData.version;
 
 if (isStagingVersion(CUR_VER)){
 
-  const PUBLISH_CMD = isCi? "npm run build && npm publish --tag beta --access public" :
+  const PUBLISH_CMD = isCi? `npm run build && npm publish --otp=${process.env.OTP_CODE} --tag beta --access public` :
     "npm run build && npm publish --tag beta --access public --dry-run";
   const NEXT_VERSION = getNextVersion(pkgData.version);
   const STAGING_COMMENT_TAG = `Staging ${CUR_VER} at ${new Date().toString()}`;
